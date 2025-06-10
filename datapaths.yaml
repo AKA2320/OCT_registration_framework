@@ -1,0 +1,4 @@
+local_data_paths_endo:
+  DATA_LOAD_DIR: 'batch1_endo'
+  DATA_SAVE_DIR: 'registered/'
+  MODEL_PATH: 'new_yolov12s_best.pt'

@@ -1,0 +1,14 @@
+h5py==3.13.0
+matplotlib==3.10.3
+natsort==8.4.0
+numpy
+opencv_python==4.11.0.86
+pydicom==3.0.1
+scipy==1.15.3
+scikit-image
+tqdm==4.67.1
+ultralytics
+bokeh
+dask 
+distributed 
+dask-jobqueue
