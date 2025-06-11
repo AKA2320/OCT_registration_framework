@@ -7,8 +7,8 @@ from natsort import natsorted
 from tqdm import tqdm
 import h5py
 from ultralytics import YOLO
-from reg_util_funcs import *
-from util_funcs import *
+from utils.reg_util_funcs import *
+from utils.util_funcs import *
 import time
 from dask_jobqueue import SLURMCluster
 from dask.distributed import Client, progress,performance_report
@@ -29,6 +29,8 @@ SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
 DATA_LOAD_DIR = config['DATA_LOAD_DIR']
 DATA_SAVE_DIR = config['DATA_SAVE_DIR']
+EXPECTED_SURFACES = 1
+EXPECTED_CELLS = 2
 
 # MODEL = YOLO(config['local_data_paths']['MODEL_PATH'])
 # SURFACE_Y_PAD = 20
@@ -52,16 +54,16 @@ def main(args):
     res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = save_detections, project = 'Detected Areas',name = scan_num, verbose=False,classes=[0,1], device='cpu', augment = True)
     surface_crop_coords = [i for i in res_surface[0].summary() if i['name']=='surface']
     cells_crop_coords = [i for i in res_surface[0].summary() if i['name']=='cells']
-    surface_crop_coords = detect_areas(surface_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0])
-    cells_crop_coords = detect_areas(cells_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0])
+    surface_crop_coords = detect_areas(surface_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
+    cells_crop_coords = detect_areas(cells_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     cropped_original_data = crop_data(original_data,surface_crop_coords,cells_crop_coords,original_data.shape[1])
     del original_data
 
     static_flat = np.argmax(np.sum(cropped_original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0, device='cpu')
+    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0, device='cpu',agnostic_nms = True, augment = True)
     # result_list = res[0].summary()
-    surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0])
+    surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     if surface_coords is None:
         with open(f'debug{scan_num}.txt', 'a') as f:
             f.write(f'NO SURFACE DETECTED: {scan_num}\n')
@@ -93,11 +95,11 @@ def main(args):
     # X-MOTION PART
     # pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu')
-    res_cells = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1, device='cpu')
+    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu',agnostic_nms = True, augment = True)
+    res_cells = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1, device='cpu',agnostic_nms = True, augment = True)
     # result_list = res[0].summary()
-    surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_X_PAD, img_shape = test_detect_img.shape[0])
-    cells_coords = detect_areas(res_cells[0].summary(),pad_val = CELLS_X_PAD, img_shape = test_detect_img.shape[0])
+    surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_X_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
+    cells_coords = detect_areas(res_cells[0].summary(),pad_val = CELLS_X_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
 
     if (cells_coords is None) and (surface_coords is None):
         with open(f'debug{scan_num}.txt', 'a') as f:
@@ -132,13 +134,13 @@ def main(args):
     else:
         UP_x, DOWN_x = None,None
     
-    tr_all = ants_all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num)
+    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num)
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='warping',disable=disable_tqdm):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
 
     # pbar.set_description(desc = 'Saving Data.....')
-    if cropped_original_data.dtype != np.float32:
-        cropped_original_data = cropped_original_data.astype(np.float32)
+    if cropped_original_data.dtype != np.float64:
+        cropped_original_data = cropped_original_data.astype(np.float64)
     folder_save = DATA_SAVE_DIR
     os.makedirs(folder_save,exist_ok=True)
     hdf5_filename = f'{folder_save}{scan_num}.h5'

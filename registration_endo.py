@@ -22,12 +22,14 @@ with open('datapaths.yaml', 'r') as f:
 # DATA_LOAD_DIR = config['server_data_paths']['DATA_LOAD_DIR']
 # DATA_SAVE_DIR = config['server_data_paths']['DATA_SAVE_DIR']
 
-MODEL = YOLO(config['local_data_paths']['MODEL_PATH'])
+MODEL = YOLO(config['PATHS']['MODEL_PATH'])
 SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
-DATA_LOAD_DIR = config['local_data_paths']['DATA_LOAD_DIR']
-DATA_SAVE_DIR = config['local_data_paths']['DATA_SAVE_DIR']
+DATA_LOAD_DIR = config['PATHS']['DATA_LOAD_DIR']
+DATA_SAVE_DIR = config['PATHS']['DATA_SAVE_DIR']
+EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
+EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
     if not os.path.exists(dirname):
@@ -53,6 +55,9 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0])
     if surface_coords is None:
+        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+            f.write(f'NO SURFACE DETECTED: {scan_num}\n')
+            f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
         print(f'NO SURFACE DETECTED: {scan_num}')
         return None
 
@@ -89,7 +94,9 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
 
     if (cells_coords is None) and (surface_coords is None):
         print(f'NO SURFACE OR CELLS DETECTED: {scan_num}')
-        return
+        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+            f.write(f'NO SURFACE OR CELLS DETECTED: {scan_num}\n')
+        return None
     
     enface_extraction_rows = []
     if surface_coords is not None:
