@@ -1,4 +1,6 @@
-local_data_paths_endo:
+PATHS:
   DATA_LOAD_DIR: 'batch1_endo'
   DATA_SAVE_DIR: 'registered/'
   MODEL_PATH: 'new_yolov12s_best.pt'
+  EXPECTED_SURFACES: 1
+  EXPECTED_CELLS: 2
