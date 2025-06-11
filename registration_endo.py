@@ -119,7 +119,7 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
     # print('DOWN_x:',DOWN_x)
     # # print('VALID ARGS: ',valid_args)
     # print('ENFACE EXTRACTION ROWS: ',enface_extraction_rows)
-    tr_all = ants_all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num)
+    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num)
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='X-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
 

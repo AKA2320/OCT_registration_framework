@@ -17,7 +17,7 @@ def mse_fun_tran_flat(shif, x, y , past_shift):
     err = np.squeeze(1-ncc(warped_x_stat ,warped_y_mov))
     return float(err)
     
-def ants_all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num):
+def all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num):
     transforms_all = np.tile(np.eye(3),(data.shape[2],1,1))
     for i in tqdm(range(data.shape[2]),desc='Flattening surfaces',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
@@ -58,7 +58,7 @@ def flatten_data(data,UP_flat,DOWN_flat,top_surf,disable_tqdm, scan_num):
     else:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
-    tr_all = ants_all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num)
+    tr_all = all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num)
     if top_surf:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[:,:DOWN_flat,i]  = warp(data[:,:DOWN_flat,i] ,AffineTransform(matrix=tr_all[i]),order=3)
@@ -75,7 +75,7 @@ def mse_fun_tran_y(shif, x, y , past_shift):
     err = np.squeeze(1-ncc(warped_x_stat ,warped_y_mov))
     return float(err)
 
-def ants_all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num):
+def all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num):
     transforms_all = np.tile(np.eye(3),(data.shape[0],1,1))
     for i in tqdm(range(data.shape[0]-1),desc='Y-motion Correction',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
@@ -114,7 +114,7 @@ def y_motion_correcting(data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num):
     else:
         for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tf_all_nn[i]),order=3)
-    tr_all_y = ants_all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num)
+    tr_all_y = all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num)
     if top_surf:
         for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tr_all_y[i]),order=3)
@@ -170,7 +170,7 @@ def check_multiple_warps(stat_img, mov_img, *args):
         errors.append(check_best_warp(stat_img, mov_img, warps[warp_value]))
     return np.argmax(errors)
 
-def ants_all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num):
+def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num):
     transforms_all = np.tile(np.eye(3),(data.shape[0],1,1))
     for i in tqdm(range(0,data.shape[0]-1,2),desc='X-motion Correction',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
