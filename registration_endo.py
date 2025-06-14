@@ -23,6 +23,7 @@ with open('datapaths.yaml', 'r') as f:
 # DATA_SAVE_DIR = config['server_data_paths']['DATA_SAVE_DIR']
 
 MODEL_FEATURE_DETECT = YOLO(config['PATHS']['MODEL_FEATURE_DETECT_PATH'])
+MODEL_X_TRANSLATION = YOLO(config['PATHS']['MODEL_X_TRANSLATION_PATH'])
 SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
