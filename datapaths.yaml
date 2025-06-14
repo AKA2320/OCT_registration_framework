@@ -3,5 +3,6 @@ PATHS:
   DATA_SAVE_DIR: 'registered/'
   MODEL_FEATURE_DETECT_PATH: 'feature_detect_yolov12best.pt'
   MODEL_X_TRANSLATION_PATH: 'model_transmorph_x_translation.pt'
+  USE_MODEL_X: True
   EXPECTED_SURFACES: 1
   EXPECTED_CELLS: 2
