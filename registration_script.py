@@ -15,15 +15,8 @@ import yaml
 with open('datapaths.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
-# MODEL_FEATURE_DETECT = YOLO(config['server_data_paths']['MODEL_FEATURE_DETECT_PATH'])
-# SURFACE_Y_PAD = 20
-# SURFACE_X_PAD = 10
-# CELLS_X_PAD = 5
-# DATA_LOAD_DIR = config['server_data_paths']['DATA_LOAD_DIR']
-# DATA_SAVE_DIR = config['server_data_paths']['DATA_SAVE_DIR']
-
 MODEL_FEATURE_DETECT = YOLO(config['PATHS']['MODEL_FEATURE_DETECT_PATH'])
-MODEL_X_TRANSLATION = YOLO(config['PATHS']['MODEL_X_TRANSLATION_PATH'])
+MODEL_X_TRANSLATION = config['PATHS']['MODEL_X_TRANSLATION_PATH']
 SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
@@ -33,6 +26,7 @@ EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
 EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
+    global MODEL_FEATURE_DETECT
     if not os.path.exists(dirname):
         raise FileNotFoundError(f"Directory {dirname} not found")
     if not os.path.exists(os.path.join(dirname, scan_num)):
