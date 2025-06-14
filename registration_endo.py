@@ -15,14 +15,14 @@ import yaml
 with open('datapaths.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
-# MODEL = YOLO(config['server_data_paths']['MODEL_PATH'])
+# MODEL_FEATURE_DETECT = YOLO(config['server_data_paths']['MODEL_FEATURE_DETECT_PATH'])
 # SURFACE_Y_PAD = 20
 # SURFACE_X_PAD = 10
 # CELLS_X_PAD = 5
 # DATA_LOAD_DIR = config['server_data_paths']['DATA_LOAD_DIR']
 # DATA_SAVE_DIR = config['server_data_paths']['DATA_SAVE_DIR']
 
-MODEL = YOLO(config['PATHS']['MODEL_PATH'])
+MODEL_FEATURE_DETECT = YOLO(config['PATHS']['MODEL_FEATURE_DETECT_PATH'])
 SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
@@ -37,11 +37,11 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
     if not os.path.exists(os.path.join(dirname, scan_num)):
         raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
     original_data = load_h5_data(dirname,scan_num)
-    # MODEL PART
-    pbar.set_description(desc = f'Loading Model for {scan_num}')
+    # MODEL_FEATURE_DETECT PART
+    pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = save_detections, project = 'Detected Areas',name = scan_num, verbose=False,classes=[0,1])
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = save_detections, project = 'Detected Areas',name = scan_num, verbose=False,classes=[0,1])
     surface_crop_coords = [i for i in res_surface[0].summary() if i['name']=='surface']
     cells_crop_coords = [i for i in res_surface[0].summary() if i['name']=='cells']
     surface_crop_coords = detect_areas(surface_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0])
@@ -51,7 +51,7 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
 
     static_flat = np.argmax(np.sum(cropped_original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0)
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0)
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0])
     if surface_coords is None:
@@ -86,8 +86,8 @@ def main(dirname, scan_num, pbar,disable_tqdm,save_detections):
     # X-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0)
-    res_cells = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1)
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0)
+    res_cells = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1)
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_X_PAD, img_shape = test_detect_img.shape[0])
     cells_coords = detect_areas(res_cells[0].summary(),pad_val = CELLS_X_PAD, img_shape = test_detect_img.shape[0])
