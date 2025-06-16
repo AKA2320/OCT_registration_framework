@@ -3,11 +3,14 @@ from pydicom import dcmread
 from skimage.transform import warp, AffineTransform
 from tqdm import tqdm
 import numpy as np
-from util_funcs import *
+from utils.util_funcs import *
 from collections import defaultdict
 from scipy.optimize import minimize as minz
 from scipy import ndimage as scp
 import h5py
+import torch
+from torchvision import transforms
+import torch.nn.functional as F
 
 def mse_fun_tran_flat(shif, x, y , past_shift):
     x = warp(x, AffineTransform(translation=(-past_shift,0)),order=1)
@@ -170,7 +173,7 @@ def check_multiple_warps(stat_img, mov_img, *args):
         errors.append(check_best_warp(stat_img, mov_img, warps[warp_value]))
     return np.argmax(errors)
 
-def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num):
+def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num, MODEL_X_TRANSLATION):
     transforms_all = np.tile(np.eye(3),(data.shape[0],1,1))
     for i in tqdm(range(0,data.shape[0]-1,2),desc='X-motion Correction',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
@@ -188,36 +191,48 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                     # MANUAL
                     temp_tform_manual = AffineTransform(translation=(0,0))
                     past_shift = 0
-                    for _ in range(10):
-                        move = minz(method='powell',fun = mse_fun_tran_x,x0 = np.array([0.0]), bounds=[(-4,4)],
-                                    args = (stat
-                                            ,temp_manual
-                                            ,past_shift))['x']
-                        past_shift += move[0]
-                    cross_section = -(past_shift*2)
+                    if MODEL_X_TRANSLATION is not None:
+                        past_shift = np.squeeze(infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual, DEVICE = 'cpu'))[0]
+                        print(past_shift)
+                        cross_section = -(past_shift)
+                    else:
+                        for _ in range(10):
+                            move = minz(method='powell',fun = mse_fun_tran_x,x0 = np.array([0.0]), bounds=[(-4,4)],
+                                        args = (stat
+                                                ,temp_manual
+                                                ,past_shift))['x']
+                            past_shift += move[0]
+                        cross_section = -(past_shift*2)
                 else:
                     cross_section = 0
-            except:
+            except Exception as e:
                 with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                    f.write(f'Cell corss_section failed here\n')
+                    f.write(f'Cell cross_section failed here\n')
                     f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
                     f.write(f'NAME: {scan_num}\n')
                     f.write(f'Ith: {i}\n')
                     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
+                raise Exception(e)
                 cross_section = 0
             enface_shape = data[:,0,:].shape[1]
             enface_wraps = []
             if len(enface_extraction_rows)>0:
                 for enf_idx in range(len(enface_extraction_rows)):
                     try:
-                        temp_enface_shift = get_line_shift(data[i,enface_extraction_rows[enf_idx]],data[i+1,enface_extraction_rows[enf_idx]],enface_shape)
-                    except:
+                        if MODEL_X_TRANSLATION is not None:
+                            temp_enface_shift = np.squeeze(infer_x_translation(MODEL_X_TRANSLATION, data[i,enface_extraction_rows[enf_idx]-32:enface_extraction_rows[enf_idx]+32]
+                                                                                                    ,data[i+1,enface_extraction_rows[enf_idx]-32:enface_extraction_rows[enf_idx]+32]
+                                                                                                    ,DEVICE = 'cpu'))[0]
+                        else:
+                            temp_enface_shift = get_line_shift(data[i,enface_extraction_rows[enf_idx]],data[i+1,enface_extraction_rows[enf_idx]],enface_shape)
+                    except Exception as e:
                         with open(f'debugs/debug{scan_num}.txt', 'a') as f:
                             f.write(f'TEMP enface shift failed here\n')
                             f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
                             f.write(f'NAME: {scan_num}\n')
                             f.write(f'Ith: {i}\n')
                             f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
+                        raise Exception(e)
                         temp_enface_shift = 0
                     enface_wraps.append(temp_enface_shift)
             all_warps = [cross_section,*enface_wraps]
@@ -232,7 +247,7 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                 f.write(f'NAME: {scan_num}\n')
                 f.write(f'Ith: {i}\n')
                 f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
-            # raise e
+            raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
     return transforms_all
@@ -279,5 +294,84 @@ def crop_data(data,surface_coords,cells_coords,max_crop_shape):
         cells_coords = np.where(cells_coords>max_crop_shape,max_crop_shape-1,cells_coords)
         merged_coords.extend([*cells_coords])
     merged_coords = merge_intervals([*merged_coords])
-    uncroped_data = uncroped_data[:,np.r_[tuple(np.r_[start:end] for start, end in merged_coords)],:]
+    uncroped_data = uncroped_data[:, np.r_[tuple(np.r_[start:end] for start, end in merged_coords)], :]
     return uncroped_data
+
+class CropOrPad():
+    def __init__(self, target_shape: tuple):
+        if not isinstance(target_shape, (tuple, list)) or len(target_shape) != 2:
+            raise ValueError("target_shape must be a tuple or list of two integers (height, width).")
+        self.target_height, self.target_width = target_shape
+
+    def __call__(self, img: torch.Tensor) -> torch.Tensor:
+        is_grayscale = False
+        if img.dim() == 2: # (H, W) grayscale
+            is_grayscale = True
+            img = img.unsqueeze(0) # Add a channel dimension: (1, H, W)
+        elif img.dim() == 3: # (C, H, W) color
+            pass
+        else:
+            raise ValueError(f"Unsupported image tensor dimensions: {img.dim()}. Expected 2 or 3.")
+
+        current_channels, current_height, current_width = img.shape
+
+        # --- Padding Logic ---
+        pad_top = max(0, (self.target_height - current_height) // 2)
+        pad_bottom = max(0, self.target_height - current_height - pad_top)
+        pad_left = max(0, (self.target_width - current_width) // 2)
+        pad_right = max(0, self.target_width - current_width - pad_left)
+
+        if pad_top > 0 or pad_bottom > 0 or pad_left > 0 or pad_right > 0:
+            # F.pad expects padding in the order (left, right, top, bottom) for 2D spatial dims
+            img = F.pad(img, (pad_left, pad_right, pad_top, pad_bottom), mode='constant', value=0)
+
+        # --- Cropping Logic ---
+        # Recalculate dimensions after potential padding
+        _, current_height_padded, current_width_padded = img.shape
+
+        if current_height_padded > self.target_height or current_width_padded > self.target_width:
+            crop_start_h = max(0, (current_height_padded - self.target_height) // 2)
+            crop_end_h = crop_start_h + self.target_height
+            crop_start_w = max(0, (current_width_padded - self.target_width) // 2)
+            crop_end_w = crop_start_w + self.target_width
+
+            # Crop the image
+            img = img[:, crop_start_h:crop_end_h, crop_start_w:crop_end_w]
+
+        if is_grayscale:
+            img = img.squeeze(0) # Remove the channel dimension if it was grayscale initially
+
+        return img
+
+def normalize(tensor: torch.Tensor) -> torch.Tensor:
+    min_val = tensor.min()
+    max_val = tensor.max()
+
+    # Prevent division by zero if all values are the same
+    if max_val == min_val:
+        return torch.zeros_like(tensor)
+
+    return (tensor - min_val) / (max_val - min_val)
+
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    CropOrPad((64,416)),
+])
+
+def infer_x_translation(model_obj, static_np, moving_np, DEVICE):
+    # Ensure float32 numpy arrays
+    static_np = transform(static_np.astype(np.float32))
+    moving_np = transform(moving_np.astype(np.float32))
+    
+    # Add batch and channel dim: (1, 1, H, W)
+    static_np = normalize(static_np.unsqueeze(0)).to(DEVICE)
+    moving_np = normalize(moving_np.unsqueeze(0)).to(DEVICE)
+
+    # Concat and infer
+    with torch.no_grad():
+        input_pair = torch.cat([static_np, moving_np], dim=1).double()  # shape: (1, 2, H, W)
+        moved_img, pred_translation = model_obj(input_pair)
+        # warped = warper(moving.double(), pred_translation)
+    # warped_np = warped.squeeze().numpy()
+    return pred_translation.squeeze().numpy()
+
