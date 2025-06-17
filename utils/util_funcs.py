@@ -210,3 +210,23 @@ def load_data_dcm(dirname, scan_num):
         imgs_from_folder[i] = aa.pixel_array
     imgs_from_folder = imgs_from_folder[:,600:-100,:].astype(np.float32)
     return imgs_from_folder
+
+def test_load_dcm(path_dir):
+    # path = path_num
+    pic_paths = []
+    for i in os.listdir(path_dir):
+        if i.endswith('.dcm') or  i.endswith('.DCM'):
+            pic_paths.append(i)
+    pic_paths = natsorted(pic_paths)
+    temp_img = dcmread(path_dir+pic_paths[0]).pixel_array
+    imgs_from_folder = np.zeros((len(pic_paths),*temp_img.shape))
+    for i,j in enumerate(pic_paths):
+        aa = dcmread(path_dir+j)
+        imgs_from_folder[i] = aa.pixel_array
+    imgs_from_folder = imgs_from_folder[:,100:-100,:].astype(np.float32)
+    return imgs_from_folder
+
+def test_load_h5(path_h5):
+    with h5py.File(path_h5, 'r') as hf:
+        original_data = hf['volume'][:,100:-100,:].astype(np.float32)
+    return original_data
