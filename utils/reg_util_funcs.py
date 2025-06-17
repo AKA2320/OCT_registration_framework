@@ -220,11 +220,13 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                 for enf_idx in range(len(enface_extraction_rows)):
                     try:
                         if MODEL_X_TRANSLATION is not None:
-                            temp_enface_shift = np.squeeze(infer_x_translation(MODEL_X_TRANSLATION, data[i,enface_extraction_rows[enf_idx]-32:enface_extraction_rows[enf_idx]+32]
-                                                                                                    ,data[i+1,enface_extraction_rows[enf_idx]-32:enface_extraction_rows[enf_idx]+32]
+                            bottom_row = min(0, enface_extraction_rows[enf_idx]-20)
+                            temp_enface_shift = np.squeeze(infer_x_translation(MODEL_X_TRANSLATION, data[i,bottom_row:enface_extraction_rows[enf_idx]+20]
+                                                                                                    ,data[i+1,bottom_row:enface_extraction_rows[enf_idx]+20]
                                                                                                     ,DEVICE = 'cpu'))[0]
                         else:
-                            temp_enface_shift = get_line_shift(data[i,enface_extraction_rows[enf_idx]],data[i+1,enface_extraction_rows[enf_idx]],enface_shape)
+                            temp_enface_shift = get_line_shift(data[i,enface_extraction_rows[enf_idx]]
+                                                               ,data[i+1,enface_extraction_rows[enf_idx]],enface_shape)
                     except Exception as e:
                         with open(f'debugs/debug{scan_num}.txt', 'a') as f:
                             f.write(f'TEMP enface shift failed here\n')

@@ -1,5 +1,5 @@
 from pydicom import dcmread
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 import numpy as np
 import os
 from skimage.transform import warp, AffineTransform
@@ -195,11 +195,12 @@ def load_h5_data(dirname, scan_num):
         original_data = hf['volume'][:,100:-100,:].astype(np.float32)
     return original_data
 
-def load_data_dcm(path):
+def load_data_dcm(dirname, scan_num):
+    path = f'{dirname}/{scan_num}/'
     # path = path_num
     pic_paths = []
     for i in os.listdir(path):
-        if i.endswith('.dcm') or  i.endswith('.tiff') or i.endswith('.PNG'):
+        if i.endswith('.dcm') or  i.endswith('.DCM'):
             pic_paths.append(i)
     pic_paths = natsorted(pic_paths)
     temp_img = dcmread(path+pic_paths[0]).pixel_array
@@ -207,5 +208,5 @@ def load_data_dcm(path):
     for i,j in enumerate(pic_paths):
         aa = dcmread(path+j)
         imgs_from_folder[i] = aa.pixel_array
-    imgs_from_folder = imgs_from_folder[:,100:-100,:].astype(np.float32)
+    imgs_from_folder = imgs_from_folder[:,600:-100,:].astype(np.float32)
     return imgs_from_folder
