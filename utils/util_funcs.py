@@ -213,6 +213,8 @@ def load_data_dcm(dirname, scan_num):
 
 def test_load_dcm(path_dir):
     # path = path_num
+    if not path_dir.endswith('/'):
+        path_dir = path_dir+'/'
     pic_paths = []
     for i in os.listdir(path_dir):
         if i.endswith('.dcm') or  i.endswith('.DCM'):
@@ -227,6 +229,8 @@ def test_load_dcm(path_dir):
     return imgs_from_folder
 
 def test_load_h5(path_h5):
+    if not path_h5.endswith('.h5'):
+        raise Exception ("Not HDF5 data format")
     with h5py.File(path_h5, 'r') as hf:
         original_data = hf['volume'][:,100:-100,:].astype(np.float32)
     return original_data
