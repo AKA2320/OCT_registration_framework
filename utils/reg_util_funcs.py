@@ -193,7 +193,6 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                     past_shift = 0
                     if MODEL_X_TRANSLATION is not None:
                         past_shift = np.squeeze(infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual, DEVICE = 'cpu'))[0]
-                        print(past_shift)
                         cross_section = -(past_shift)
                     else:
                         for _ in range(10):

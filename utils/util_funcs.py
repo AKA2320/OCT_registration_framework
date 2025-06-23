@@ -211,7 +211,7 @@ def load_data_dcm(dirname, scan_num):
     imgs_from_folder = imgs_from_folder[:,600:-100,:].astype(np.float32)
     return imgs_from_folder
 
-def test_load_dcm(path_dir):
+def GUI_load_dcm(path_dir):
     # path = path_num
     if not path_dir.endswith('/'):
         path_dir = path_dir+'/'
@@ -225,12 +225,12 @@ def test_load_dcm(path_dir):
     for i,j in enumerate(pic_paths):
         aa = dcmread(path_dir+j)
         imgs_from_folder[i] = aa.pixel_array
-    imgs_from_folder = imgs_from_folder[:,100:-100,:].astype(np.float32)
+    imgs_from_folder = imgs_from_folder[:,:,:].astype(np.float32)
     return imgs_from_folder
 
-def test_load_h5(path_h5):
+def GUI_load_h5(path_h5):
     if not path_h5.endswith('.h5'):
         raise Exception ("Not HDF5 data format")
     with h5py.File(path_h5, 'r') as hf:
-        original_data = hf['volume'][:,100:-100,:].astype(np.float32)
+        original_data = hf['volume'][:,:,:].astype(np.float32)
     return original_data
