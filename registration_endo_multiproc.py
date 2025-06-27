@@ -23,35 +23,29 @@ logger = logging.getLogger(__name__)
 with open('datapaths.yaml', 'r') as f:
     config = yaml.safe_load(f)['server_data_paths_endo']
 
-MODEL = YOLO(config['MODEL_PATH'])
+MODEL_FEATURE_DETECT = YOLO(config['MODEL_FEATURE_DETECT_PATH'])
+MODEL_X_TRANSLATION = config['PATHS']['MODEL_X_TRANSLATION_PATH']
 SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
 DATA_LOAD_DIR = config['DATA_LOAD_DIR']
 DATA_SAVE_DIR = config['DATA_SAVE_DIR']
-EXPECTED_SURFACES = 1
-EXPECTED_CELLS = 2
-
-# MODEL = YOLO(config['local_data_paths']['MODEL_PATH'])
-# SURFACE_Y_PAD = 20
-# SURFACE_X_PAD = 10
-# CELLS_X_PAD = 5
-# DATA_LOAD_DIR = config['local_data_paths']['DATA_LOAD_DIR']
-# DATA_SAVE_DIR = config['local_data_paths']['DATA_SAVE_DIR']
+EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
+EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 def main(args):
-    global MODEL
+    global MODEL_FEATURE_DETECT
     dirname, scan_num,disable_tqdm,save_detections = args
     if not os.path.exists(dirname):
         raise FileNotFoundError(f"Directory {dirname} not found")
     if not os.path.exists(os.path.join(dirname, scan_num)):
         raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
     original_data = load_h5_data(dirname,scan_num)
-    # MODEL PART
-    # pbar.set_description(desc = f'Loading Model for {scan_num}')
+    # MODEL_FEATURE_DETECT PART
+    # pbar.set_description(desc = f'Loading MODEL_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = save_detections, project = 'Detected Areas',name = scan_num, verbose=False,classes=[0,1], device='cpu', augment = True)
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = save_detections, project = 'Detected Areas',name = scan_num, verbose=False,classes=[0,1], device='cpu', augment = True)
     surface_crop_coords = [i for i in res_surface[0].summary() if i['name']=='surface']
     cells_crop_coords = [i for i in res_surface[0].summary() if i['name']=='cells']
     surface_crop_coords = detect_areas(surface_crop_coords, pad_val = 20, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
@@ -61,7 +55,7 @@ def main(args):
 
     static_flat = np.argmax(np.sum(cropped_original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0, device='cpu',agnostic_nms = True, augment = True)
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes=0, device='cpu',agnostic_nms = True, augment = True)
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     if surface_coords is None:
@@ -95,8 +89,8 @@ def main(args):
     # X-MOTION PART
     # pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
-    res_surface = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu',agnostic_nms = True, augment = True)
-    res_cells = MODEL.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1, device='cpu',agnostic_nms = True, augment = True)
+    res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu',agnostic_nms = True, augment = True)
+    res_cells = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 1, device='cpu',agnostic_nms = True, augment = True)
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_X_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     cells_coords = detect_areas(res_cells[0].summary(),pad_val = CELLS_X_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
@@ -148,9 +142,9 @@ def main(args):
         hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
 
 def init_worker():
-    global MODEL
-    MODEL = YOLO(config['MODEL_PATH'])
-    # MODEL = YOLO('/Users/akapatil/Documents/feature_extraction/yolo_feature_extraction/yolov12s_best.pt')
+    global MODEL_FEATURE_DETECT
+    MODEL_FEATURE_DETECT = YOLO(config['MODEL_FEATURE_DETECT_PATH'])
+    # MODEL_FEATURE_DETECT = YOLO('/Users/akapatil/Documents/feature_extraction/yolo_feature_extraction/yolov12s_best.pt')
 
 if __name__ == "__main__":
     data_dirname = DATA_LOAD_DIR
