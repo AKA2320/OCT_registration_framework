@@ -4,5 +4,5 @@ PATHS:
   MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
   MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt'
   USE_MODEL_X: True
-  EXPECTED_SURFACES: 2
+  EXPECTED_SURFACES: 3
   EXPECTED_CELLS: 2
