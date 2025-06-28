@@ -12,6 +12,8 @@ import torch
 from torchvision import transforms
 import torch.nn.functional as F
 
+## Flattening Functions
+ 
 def mse_fun_tran_flat(shif, x, y , past_shift):
     x = warp(x, AffineTransform(translation=(-past_shift,0)),order=1)
     y = warp(y, AffineTransform(translation=(past_shift,0)),order=1)
@@ -20,12 +22,14 @@ def mse_fun_tran_flat(shif, x, y , past_shift):
     err = np.squeeze(1-ncc(warped_x_stat ,warped_y_mov))
     return float(err)
     
-def all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num):
+def all_tran_flat(data,static_flat,disable_tqdm, scan_num):
     transforms_all = np.tile(np.eye(3),(data.shape[2],1,1))
     for i in tqdm(range(data.shape[2]),desc='Flattening surfaces',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
-            stat = data[:,UP_flat:DOWN_flat,static_flat][::20].copy()
-            temp_img = data[:,UP_flat:DOWN_flat,i][::20].copy()
+            # stat = data[:,UP_flat:DOWN_flat,static_flat][::20].copy()
+            # temp_img = data[:,UP_flat:DOWN_flat,i][::20].copy()
+            stat = data[:,:,static_flat][::20]
+            temp_img = data[:,:,i][::20]
             # MANUAL
             past_shift = 0
             for _ in range(10):
@@ -40,35 +44,39 @@ def all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num):
         except:
             with open(f'debugs/debug{scan_num}.txt', 'a') as f:
                 f.write(f'FLAT motion EVERYTHIN FAILED HERE\n')
-                f.write(f'UP_flat: {UP_flat}, DOWN_flat: {DOWN_flat}\n')
                 f.write(f'NAME: {scan_num}\n')
                 f.write(f'Ith: {i}\n')
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
 
-def flatten_data(data,UP_flat,DOWN_flat,top_surf,disable_tqdm, scan_num):
-    static_flat = np.argmax(np.sum(data[:,UP_flat:DOWN_flat,:],axis=(0,1)))
+def flatten_data(data,slice_coords,top_surf, partition_coord,disable_tqdm, scan_num):
+    temp_sliced_data = data[:, np.r_[tuple(np.r_[start:end] for start, end in slice_coords)], :].copy()
+    static_flat = np.argmax(np.sum(temp_sliced_data,axis=(0,1)))
     # finding the bright points in all images in standard interference
-    temp_rotated_data = data[:,UP_flat:DOWN_flat,:].transpose(2,1,0)
-    nn = [np.argmax(np.sum(temp_rotated_data[i],axis=1)) for i in range(temp_rotated_data.shape[0])]
-    tf_all_nn = np.tile(np.eye(3),(temp_rotated_data.shape[0],1,1))
-    for i in range(tf_all_nn.shape[0]):
-        tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(-(nn[0]-nn[i]),0)))
+    # temp_rotated_data = data[:,UP_flat:DOWN_flat,:].transpose(2,1,0)
+    # nn = [np.argmax(np.sum(temp_rotated_data[i],axis=1)) for i in range(temp_rotated_data.shape[0])]
+    # tf_all_nn = np.tile(np.eye(3),(temp_rotated_data.shape[0],1,1))
+    # for i in range(tf_all_nn.shape[0]):
+    #     tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(-(nn[0]-nn[i]),0)))
+    
+
+    # if partition_coord:
+    #     for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[:,:DOWN_flat,i]  = warp(data[:,:DOWN_flat,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
+    # else:
+    #     for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
+    tr_all = all_tran_flat(temp_sliced_data,static_flat,disable_tqdm,scan_num)
     if top_surf:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[:,:DOWN_flat,i]  = warp(data[:,:DOWN_flat,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
+            data[:,:partition_coord,i]  = warp(data[:,:partition_coord,i] ,AffineTransform(matrix=tr_all[i]),order=3)
     else:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
-    tr_all = all_tran_flat(data,UP_flat,DOWN_flat,static_flat,disable_tqdm, scan_num)
-    if top_surf:
-        for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[:,:DOWN_flat,i]  = warp(data[:,:DOWN_flat,i] ,AffineTransform(matrix=tr_all[i]),order=3)
-    else:
-        for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tr_all[i]),order=3)
+            data[:,partition_coord:,i]  = warp(data[:,partition_coord:,i] ,AffineTransform(matrix=tr_all[i]),order=3)
     return data
+
+## Y-Motion Functions
 
 def mse_fun_tran_y(shif, x, y , past_shift):
     x = warp(x, AffineTransform(translation=(0,-past_shift)),order=3)
@@ -78,16 +86,16 @@ def mse_fun_tran_y(shif, x, y , past_shift):
     err = np.squeeze(1-ncc(warped_x_stat ,warped_y_mov))
     return float(err)
 
-def all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num):
+def all_trans_y(data,static_y_motion,disable_tqdm,scan_num):
     transforms_all = np.tile(np.eye(3),(data.shape[0],1,1))
     for i in tqdm(range(data.shape[0]-1),desc='Y-motion Correction',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         try:
-            stat = data[static_y_motion][UP_y:DOWN_y][:,::20].copy()
-            temp_img = data[i][UP_y:DOWN_y][:,::20].copy()
+            stat = data[static_y_motion][:,::20].copy()
+            temp_img = data[i][:,::20].copy()
             # MANUAL
             past_shift = 0
             for _ in range(10):
-                move = minz(method='powell',fun = mse_fun_tran_y,x0 = np.array([0.0]), bounds=[(-2,2)],
+                move = minz(method='powell',fun = mse_fun_tran_y,x0 = np.array([0.0]), bounds=[(-5,5)],
                             args = (stat
                                     ,temp_img
                                     ,past_shift))['x']
@@ -97,34 +105,45 @@ def all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num):
         except:
             with open(f'debugs/debug{scan_num}.txt', 'a') as f:
                 f.write(f'Y motion EVERYTHIN FAILED HERE\n')
-                f.write(f'UP_y: {UP_y}, DOWN_y: {DOWN_y}\n')
                 f.write(f'NAME: {scan_num}\n')
                 f.write(f'Ith: {i}\n')
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
 
-def y_motion_correcting(data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num):
-    static_y_motion = np.argmax(np.sum(data[:,UP_y:DOWN_y,:],axis=(1,2)))
-    # finding the bright points in all images in standard interference
-    nn = [np.argmax(np.sum(data[i][UP_y:DOWN_y],axis=1)) for i in range(data.shape[0])]
-    tf_all_nn = np.tile(np.eye(3),(data.shape[0],1,1))
-    for i in range(tf_all_nn.shape[0]):
-        tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(0,-(nn[0]-nn[i]))))
+def y_motion_correcting(data,slice_coords,top_surf,partition_coord,disable_tqdm,scan_num):
+    # static_y_motion = np.argmax(np.sum(data[:,UP_y:DOWN_y,:],axis=(1,2)))
+    # # finding the bright points in all images in standard interference
+    # nn = [np.argmax(np.sum(data[i][UP_y:DOWN_y],axis=1)) for i in range(data.shape[0])]
+    # tf_all_nn = np.tile(np.eye(3),(data.shape[0],1,1))
+    # for i in range(tf_all_nn.shape[0]):
+    #     tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(0,-(nn[0]-nn[i]))))
+    # if top_surf:
+    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tf_all_nn[i]),order=3)
+    # else:
+    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tf_all_nn[i]),order=3)
+    # tr_all_y = all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num)
+    # if top_surf:
+    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tr_all_y[i]),order=3)
+    # else:
+    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+    #         data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tr_all_y[i]),order=3)
+
+    temp_sliced_data = data[:, np.r_[tuple(np.r_[start:end] for start, end in slice_coords)], :].copy()
+    static_y_motion = np.argmax(np.sum(temp_sliced_data,axis=(1,2)))
+    tr_all_y = all_trans_y(temp_sliced_data,static_y_motion,disable_tqdm,scan_num)
     if top_surf:
-        for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tf_all_nn[i]),order=3)
+        for i in tqdm(range(data.shape[0]),desc='Y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+            data[i,:partition_coord]  = warp(data[i,:partition_coord],AffineTransform(matrix=tr_all_y[i]),order=3)
     else:
-        for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tf_all_nn[i]),order=3)
-    tr_all_y = all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num)
-    if top_surf:
-        for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tr_all_y[i]),order=3)
-    else:
-        for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tr_all_y[i]),order=3)
+        for i in tqdm(range(data.shape[0]),desc='Y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+            data[i,partition_coord:]  = warp(data[i,partition_coord:],AffineTransform(matrix=tr_all_y[i]),order=3)
     return data
+
+## X-Motion Functions
 
 def shift_func(shif, x, y , past_shift):
     x = scp.shift(x, -past_shift,order=3,mode='nearest')
@@ -252,6 +271,8 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
     return transforms_all
+
+## Misc Functions
 
 def filter_list(result_list,expected_num):
     grouped = defaultdict(list)
