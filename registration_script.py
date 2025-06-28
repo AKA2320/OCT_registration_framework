@@ -46,7 +46,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     elif data_type=='dcm':
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
-    print(original_data.shape)
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
@@ -72,28 +71,61 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
             f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
         print(f'NO SURFACE DETECTED: {scan_num}')
         return None
+    if EXPECTED_SURFACES>1:
+        partition_coord = np.ceil(np.mean(np.mean(surface_coords[-2:],axis=1))).astype(int)
+    else:
+        partition_coord = None
+    # print(surface_coords.shape)
+    # print(partition_coord)
+    # plt.imshow(test_detect_img)
+    # plt.show()
+    # quit()
+
 
     # FLATTENING PART
     pbar.set_description(desc = f'Flattening {scan_num}.....')
     # print('SURFACE COORDS:',surface_coords)
     static_flat = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(0,1)))
-    top_surf = True
-    for i in range(surface_coords.shape[0]):
-        UP_flat,DOWN_flat = surface_coords[i,0], surface_coords[i,1]
-        UP_flat = max(UP_flat,0)
-        DOWN_flat = min(DOWN_flat, cropped_original_data.shape[2])
-        cropped_original_data = flatten_data(cropped_original_data,UP_flat,DOWN_flat,top_surf,disable_tqdm,scan_num)
-        top_surf = False
+    if surface_coords.shape[0]>1:
+        top_surf = True
+        for _ in range(2):
+            # UP_flat,DOWN_flat = surface_coords[:-1,0], surface_coords[:-1,1]
+            # UP_flat = max(UP_flat,0)
+            # DOWN_flat = min(DOWN_flat, cropped_original_data.shape[2])
+            if top_surf:
+                cropped_original_data = flatten_data(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
+            else:
+                cropped_original_data = flatten_data(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
+            top_surf = False
+    else:
+        cropped_original_data = flatten_data(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
     # Y-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} Y-Motion.....')
-    top_surf = True
-    for i in range(surface_coords.shape[0]):
-        UP_y,DOWN_y = surface_coords[i,0], surface_coords[i,1]
-        UP_y = max(UP_y,0)
-        DOWN_y = min(DOWN_y, cropped_original_data.shape[2])
-        cropped_original_data = y_motion_correcting(cropped_original_data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num)
-        top_surf = False
+    # top_surf = True
+    # for i in range(surface_coords.shape[0]):
+    #     UP_y,DOWN_y = surface_coords[i,0], surface_coords[i,1]
+    #     UP_y = max(UP_y,0)
+    #     DOWN_y = min(DOWN_y, cropped_original_data.shape[2])
+    #     cropped_original_data = y_motion_correcting(cropped_original_data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num)
+    #     top_surf = False
+    if surface_coords.shape[0]>1:
+        top_surf = True
+        for _ in range(2):
+            # UP_flat,DOWN_flat = surface_coords[:-1,0], surface_coords[:-1,1]
+            # UP_flat = max(UP_flat,0)
+            # DOWN_flat = min(DOWN_flat, cropped_original_data.shape[2])
+            if top_surf:
+                cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
+            else:
+                cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
+            top_surf = False
+    else:
+        cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
+    
+    plt.imshow(cropped_original_data[:,:,static_flat])
+    plt.show()
+    quit()
 
     # X-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
