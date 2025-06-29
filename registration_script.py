@@ -123,9 +123,9 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     else:
         cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
     
-    plt.imshow(cropped_original_data[:,:,static_flat])
-    plt.show()
-    quit()
+    # plt.imshow(cropped_original_data[:,:,static_flat])
+    # plt.show()
+    # quit()
 
     # X-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
