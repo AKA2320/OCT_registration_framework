@@ -183,7 +183,6 @@ def merge_intervals(intervals):
             merged.append(current)
     return merged
 
-
 def load_h5_data(dirname, scan_num):
     path = f'{dirname}/{scan_num}/'
     # path = 'intervolume_registered/self_inter/scan5/'
@@ -208,7 +207,7 @@ def load_data_dcm(dirname, scan_num):
     for i,j in enumerate(pic_paths):
         aa = dcmread(path+j)
         imgs_from_folder[i] = aa.pixel_array
-    imgs_from_folder = imgs_from_folder[:,600:-100,:].astype(np.float32)
+    imgs_from_folder = imgs_from_folder[:,100:-100,:].astype(np.float32)
     return imgs_from_folder
 
 def GUI_load_dcm(path_dir):
