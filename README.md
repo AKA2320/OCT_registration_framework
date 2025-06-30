@@ -77,6 +77,3 @@ The `models/` directory contains the pre-trained models used by the framework:
 *   `feature_detect_yolov12best.pt`: YOLO model for feature detection.
 *   `model_transmorph_x_translation.pt`: "TransMorph" model for X-motion correction (optional).
 
-## Debugging
-
-The `debugs/` directory contains debug output files. If an error occurs during processing, the script will write information about the error to a file in this directory.
