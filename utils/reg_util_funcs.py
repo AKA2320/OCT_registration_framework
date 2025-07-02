@@ -68,6 +68,11 @@ def flatten_data(data,slice_coords,top_surf, partition_coord,disable_tqdm, scan_
     #     for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
     #         data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
     tr_all = all_tran_flat(temp_sliced_data,static_flat,disable_tqdm,scan_num)
+    if partition_coord is None:
+        for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+            data[:,:,i]  = warp(data[:,:,i] ,AffineTransform(matrix=tr_all[i]),order=3)
+        return data
+
     if top_surf:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[:,:partition_coord,i]  = warp(data[:,:partition_coord,i] ,AffineTransform(matrix=tr_all[i]),order=3)
@@ -135,6 +140,11 @@ def y_motion_correcting(data,slice_coords,top_surf,partition_coord,disable_tqdm,
     temp_sliced_data = data[:, np.r_[tuple(np.r_[start:end] for start, end in slice_coords)], :].copy()
     static_y_motion = np.argmax(np.sum(temp_sliced_data,axis=(1,2)))
     tr_all_y = all_trans_y(temp_sliced_data,static_y_motion,disable_tqdm,scan_num)
+    if partition_coord is None:
+        for i in tqdm(range(data.shape[0]),desc='Y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
+            data[i]  = warp(data[i],AffineTransform(matrix=tr_all_y[i]),order=3)
+        return data
+    
     if top_surf:
         for i in tqdm(range(data.shape[0]),desc='Y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
             data[i,:partition_coord]  = warp(data[i,:partition_coord],AffineTransform(matrix=tr_all_y[i]),order=3)
