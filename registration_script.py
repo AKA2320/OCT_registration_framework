@@ -86,8 +86,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     pbar.set_description(desc = f'Flattening {scan_num}.....')
     # print('SURFACE COORDS:',surface_coords)
     static_flat = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(0,1)))
+    top_surf = True
     if surface_coords.shape[0]>1:
-        top_surf = True
         for _ in range(2):
             # UP_flat,DOWN_flat = surface_coords[:-1,0], surface_coords[:-1,1]
             # UP_flat = max(UP_flat,0)
@@ -109,8 +109,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     #     DOWN_y = min(DOWN_y, cropped_original_data.shape[2])
     #     cropped_original_data = y_motion_correcting(cropped_original_data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num)
     #     top_surf = False
+    top_surf = True
     if surface_coords.shape[0]>1:
-        top_surf = True
         for _ in range(2):
             # UP_flat,DOWN_flat = surface_coords[:-1,0], surface_coords[:-1,1]
             # UP_flat = max(UP_flat,0)
