@@ -1,0 +1,42 @@
+[project]
+name = "OCT_registration_framework"
+version = "0.1.0"
+description = "A framework for OCT registration"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["oct", "registration"]
+authors = [
+  { name="Your Name", email="your.email@example.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License", # Assuming MIT based on common practice
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "h5py",
+    "matplotlib",
+    "natsort",
+    "numpy",
+    "opencv_python",
+    "pydicom",
+    "scipy",
+    "scikit-image",
+    "tqdm",
+    "ultralytics",
+    "bokeh",
+    "dask",
+    "distributed",
+    "dask-jobqueue",
+    "PySide6",
+    "torch",
+    "torchvision",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/OCT_registration_framework" # Replace with your repo URL
+"Bug Tracker" = "https://github.com/yourusername/OCT_registration_framework/issues" # Replace with your repo URL
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
