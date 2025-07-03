@@ -32,10 +32,7 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
     ```shell
     pip install .
     ```
-    For editable install (if developing):
-    ```shell
-    pip install -e .
-    ```
+
 
 **Using uv (recommended):**
 
@@ -54,10 +51,6 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
     ```shell
     uv pip install .
     ```
-    For editable install (if developing):
-    ```shell
-    uv pip install -e .
-    ```
 
 **Installing directly from Git:**
 
@@ -68,18 +61,13 @@ pip install git+<repository_url>
 # Or with uv:
 # uv pip install git+<repository_url>
 ```
-For editable install directly from Git (replace `<repository_url>` and `OCT_registration_framework`):
-```shell
-pip install -e git+<repository_url>#egg=OCT_registration_framework
-# Or with uv:
-# uv pip install -e git+<repository_url>#egg=OCT_registration_framework
-```
+
 
 ## Usage
 
 1.  **Prepare your OCT data:**
     *   The framework supports `.h5` and `.dcm` OCT data formats.
-    *   Place your data in the directory specified by the `DATA_LOAD_DIR` parameter in `datapaths.yaml` (or provide the directory via the GUI or command line).
+    *   Place your data in the directory specified by the `DATA_LOAD_DIR` parameter in `datapaths.yaml`.
 
 2.  **Configure the `datapaths.yaml` file:**
     *   Update the paths to the data directory, model files, and other configuration parameters according to your setup.
@@ -87,10 +75,10 @@ pip install -e git+<repository_url>#egg=OCT_registration_framework
 3.  **Run the registration script:**
 
     ```shell
-    python registration_script.py --dirname /path/to/your/data --save-dirname /path/to/save/results [--use-model-x]
+    python registration_script.py
     ```
-    *   The script will process the OCT data and save the registered volumes in the specified save directory.
-    *   Refer to the script's help (`python registration_script.py --help`) for more command-line options.
+    *   The script will process the OCT data and save the registered volumes in the directory specified by the `DATA_SAVE_DIR` parameter in `datapaths.yaml`.
+    *   **Note:** This script relies on the configuration in `datapaths.yaml`. To specify different input and output directories or choose whether to use Model X, use the GUI.
 
 4. **Using the GUI:**
     *   Run the GUI script:
@@ -109,7 +97,7 @@ The `datapaths.yaml` file is used to configure the project. It contains the foll
 *   `MODEL_X_TRANSLATION_PATH`: Path to the "TransMorph" model for X-motion correction.
 *    `EXPECTED_SURFACES`: Expected number of surfaces.
 *    `EXPECTED_CELLS`: Expected number of cells.
-*   `USE_MODEL_X`: A flag to indicate whether to use MODEL_X_TRANSLATION (can be overridden by command line/GUI)
+*   `USE_MODEL_X`: A flag to indicate whether to use MODEL_X_TRANSLATION (can be overridden by the GUI)
 
 ## Key Files
 
