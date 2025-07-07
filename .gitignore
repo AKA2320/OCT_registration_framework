@@ -198,3 +198,4 @@ env_testing/
 test_registered/
 test*
 env*
+setup.sh
