@@ -11,15 +11,18 @@ This project provides a framework for performing registration of Optical Coheren
 *   **Deep Learning Integration:** Integrates deep learning models, such as a Swin Transformer-based "TransMorph" model, for advanced registration tasks.
 *   **Configuration-Driven:** Uses YAML configuration files for easy customization of parameters and file paths.
 
+
 ## Installation
 
 You can install the `OCT_registration_framework` package using pip, uv, or directly from the Git repository.
+
+**Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://github.com/astral-sh/uv) for installation instructions.
 
 **Using pip (recommended):**
 
 1.  **Clone the repository:**
     ```shell
-    git clone <repository_url>
+    git clone https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
@@ -33,12 +36,11 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
     pip install .
     ```
 
-
-**Using uv (recommended):**
+**Using uv (faster than pip):**
 
 1.  **Clone the repository:**
     ```shell
-    git clone <repository_url>
+    git clone https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
@@ -52,16 +54,32 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
     uv pip install .
     ```
 
+**Using uv with lock file (recommended for reproducible environments):**
+
+1.  **Clone the repository:**
+    ```shell
+    git clone https://github.com/AKA2320/OCT_registration_framework.git
+    cd OCT_registration_framework
+    ```
+2.  **Create and activate a virtual environment:**
+    ```shell
+    python3 -m venv .venv
+    source .venv/bin/activate # On Linux/macOS
+    # .venv\Scripts\activate # On Windows
+    ```
+3.  **Install dependencies from the lock file:**
+    ```shell
+    uv sync
+    ```
+
 **Installing directly from Git:**
 
-You can install directly from the Git repository without cloning first. Replace `<repository_url>` with the actual URL.
-
+You can install directly from the Git repository without cloning.
 ```shell
-pip install git+<repository_url>
+pip install git+https://github.com/AKA2320/OCT_registration_framework.git
 # Or with uv:
-# uv pip install git+<repository_url>
+# uv pip install git+https://github.com/AKA2320/OCT_registration_framework.git
 ```
-
 
 ## Usage
 
@@ -107,7 +125,7 @@ The `datapaths.yaml` file is used to configure the project. It contains the foll
 *   `utils/reg_util_funcs.py`: Provides utility functions for registration, including motion correction, flattening, and feature detection.
 *   `datapaths.yaml`: Configuration file for specifying file paths and other parameters.
 *   `pyproject.toml`: Project configuration and dependencies.
-*   `requirements.txt`: (Deprecated - use pyproject.toml)
+*   `uv.lock`: Reproduce exact environment using UV.
 
 ## Models
 
