@@ -16,7 +16,7 @@ This project provides a framework for performing registration of Optical Coheren
 
 You can install the `OCT_registration_framework` package using pip, uv, or directly from the Git repository.
 
-**Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://github.com/astral-sh/uv) for installation instructions.
+**Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 
 **Using pip (recommended):**
 
