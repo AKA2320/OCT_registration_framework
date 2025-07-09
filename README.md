@@ -75,6 +75,14 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
 **Installing directly from Git:**
 
 You can install directly from the Git repository without cloning.
+
+It's recommended to create and activate a virtual environment first:
+    ```shell
+    python3 -m venv .venv
+    source .venv/bin/activate # On Linux/macOS
+    # .venv\Scripts\activate # On Windows
+    ```
+
 ```shell
 pip install git+https://github.com/AKA2320/OCT_registration_framework.git
 # Or with uv:
