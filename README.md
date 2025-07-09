@@ -14,7 +14,7 @@ This project provides a framework for performing registration of Optical Coheren
 
 ## Installation
 
-You can install the `OCT_registration_framework` package using pip, uv, or directly from the Git repository.
+You can install the `OCT_registration_framework` package using pip or uv.  It's highly recommended to create a virtual environment before installing.
 
 **Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 
@@ -72,23 +72,6 @@ You can install the `OCT_registration_framework` package using pip, uv, or direc
     uv sync
     ```
 
-**Installing directly from Git:**
-
-You can install directly from the Git repository without cloning.
-
-It's recommended to create and activate a virtual environment first:
-    ```shell
-    python3 -m venv .venv
-    source .venv/bin/activate # On Linux/macOS
-    # .venv\Scripts\activate # On Windows
-    ```
-
-```shell
-pip install git+https://github.com/AKA2320/OCT_registration_framework.git
-# Or with uv:
-# uv pip install git+https://github.com/AKA2320/OCT_registration_framework.git
-```
-
 ## Usage
 
 1.  **Prepare your OCT data:**
@@ -142,4 +125,3 @@ The `models/` directory contains the pre-trained models used by the framework:
 *   `feature_detect_yolov12best.pt`: YOLO model for feature detection.
 *   `model_transmorph_LRNPOSEMBD_Large_x_translation.pt`: "TransMorph" model for X-motion correction.
 *   `model_transmorph_x_translation.pt`: Another "TransMorph" model variant.
-
