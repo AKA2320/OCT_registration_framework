@@ -1,2 +1,1 @@
-model_transmorph_x_translation.pt filter=lfs diff=lfs merge=lfs -text
 models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt filter=lfs diff=lfs merge=lfs -text
