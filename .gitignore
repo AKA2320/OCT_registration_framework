@@ -199,3 +199,5 @@ test_registered/
 test*
 env*
 setup.sh
+models/model_transmorph_x_translation.pt
+extract_registered_enface.py
