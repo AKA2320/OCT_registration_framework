@@ -1,8 +1,10 @@
-# OCT_registration_framework
+# OCT_registration_framework - feature_gui Branch
 
 ## Overview
 
-This project provides a framework for performing registration of Optical Coherence Tomography (OCT) volumes. It aims to correct for distortions and motion artifacts in OCT images, improving their quality and enabling more accurate analysis. The framework utilizes a combination of image processing techniques, deep learning models, and optimization algorithms.
+This is the README for the **feature_gui branch** of the OCT_registration_framework.
+
+This project provides a framework for performing registration of OCT volumes, with a focus on providing a user-friendly Graphical User Interface (GUI) for interaction. It aims to correct for distortions and motion artifacts in OCT images, improving their quality and enabling more accurate analysis. The framework utilizes a combination of image processing techniques, deep learning models, and optimization algorithms.
 
 ## Key Features
 
@@ -14,15 +16,15 @@ This project provides a framework for performing registration of Optical Coheren
 
 ## Installation
 
-You can install the `OCT_registration_framework` package using pip or uv.  It's highly recommended to create a virtual environment before installing.
+You can install the `OCT_registration_framework` package using pip or uv. It's highly recommended to create a virtual environment before installing.
 
 **Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 
 **Using pip (recommended):**
 
-1.  **Clone the repository:**
+1.  **Clone the feature_gui branch:**
     ```shell
-    git clone https://github.com/AKA2320/OCT_registration_framework.git
+    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
@@ -38,9 +40,9 @@ You can install the `OCT_registration_framework` package using pip or uv.  It's 
 
 **Using uv (faster than pip):**
 
-1.  **Clone the repository:**
+1.  **Clone the feature_gui branch:**
     ```shell
-    git clone https://github.com/AKA2320/OCT_registration_framework.git
+    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
@@ -56,9 +58,9 @@ You can install the `OCT_registration_framework` package using pip or uv.  It's 
 
 **Using uv with lock file (recommended for reproducible environments):**
 
-1.  **Clone the repository:**
+1.  **Clone the feature_gui branch:**
     ```shell
-    git clone https://github.com/AKA2320/OCT_registration_framework.git
+    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
@@ -74,44 +76,40 @@ You can install the `OCT_registration_framework` package using pip or uv.  It's 
 
 ## Usage
 
+For the feature_gui branch, the primary method of interaction is through the graphical interface (`GUI_scripts/pyside_gui.py`). The GUI scripts are located in the `GUI_scripts/` folder.
+
 1.  **Prepare your OCT data:**
     *   The framework supports `.h5` and `.dcm` OCT data formats.
-    *   Place your data in the directory specified by the `DATA_LOAD_DIR` parameter in `datapaths.yaml`.
+    *   Ensure your data is accessible.
 
-2.  **Configure the `datapaths.yaml` file:**
-    *   Update the paths to the data directory, model files, and other configuration parameters according to your setup.
-
-3.  **Run the registration script:**
-
-    ```shell
-    python registration_script.py
-    ```
-    *   The script will process the OCT data and save the registered volumes in the directory specified by the `DATA_SAVE_DIR` parameter in `datapaths.yaml`.
-    *   **Note:** This script relies on the configuration in `datapaths.yaml`. To specify different input and output directories or choose whether to use Model X, use the GUI.
-
-4. **Using the GUI:**
-    *   Run the GUI script:
+2.  **Run the GUI application:**
+    *   After installing the package and activating your virtual environment, run the GUI script:
         ```shell
-        python test_pyside.py
+        python GUI_scripts/pyside_gui.py
         ```
-    *   Select the input and output directories and choose whether to use Model X.
+    *   Use the GUI to select your input data directory, specify the output save directory, and choose whether to use the Model X translation.
+
+3.  **Configuration via `datapaths.yaml` (Optional for GUI):**
+    *   While the GUI allows you to specify input/output paths, the `datapaths.yaml` file still contains default paths and configurations for models and other parameters. You may need to update this file for model paths or other settings not exposed in the GUI.
 
 ## Configuration
 
-The `datapaths.yaml` file is used to configure the project. It contains the following parameters:
+The `datapaths.yaml` file is used to configure the project, particularly for model paths and default settings. It contains the following parameters:
 
-*   `DATA_LOAD_DIR`: Default path to the directory containing the input OCT data.
-*   `DATA_SAVE_DIR`: Default path to the directory where the registered OCT data will be saved.
+*   `DATA_LOAD_DIR`: Default path to the directory containing the input OCT data (can be overridden by GUI).
+*   `DATA_SAVE_DIR`: Default path to the directory where the registered OCT data will be saved (can be overridden by GUI).
 *   `MODEL_FEATURE_DETECT_PATH`: Path to the YOLO model for feature detection.
 *   `MODEL_X_TRANSLATION_PATH`: Path to the "TransMorph" model for X-motion correction.
 *    `EXPECTED_SURFACES`: Expected number of surfaces.
 *    `EXPECTED_CELLS`: Expected number of cells.
-*   `USE_MODEL_X`: A flag to indicate whether to use MODEL_X_TRANSLATION (can be overridden by the GUI)
+*   `USE_MODEL_X`: A flag to indicate whether to use MODEL_X_TRANSLATION (can be overridden by the GUI).
 
 ## Key Files
 
-*   `registration_script.py`: The main script for performing OCT volume registration.
-*   `test_pyside.py`: The PySide6 GUI application.
+*   `GUI_scripts/pyside_gui.py`: The main PySide6 GUI application.
+*   `registration_script.py`: The backend script for performing OCT volume registration (typically run via the GUI).
+*   `GUI_scripts/gui_reg_util_funcs.py`: Utility functions specific to the GUI registration process.
+*   `GUI_scripts/gui_util_funcs.py`: General utility functions for the GUI.
 *   `funcs_transmorph.py`: Contains the implementation of the "TransMorph" model.
 *   `utils/reg_util_funcs.py`: Provides utility functions for registration, including motion correction, flattening, and feature detection.
 *   `datapaths.yaml`: Configuration file for specifying file paths and other parameters.
