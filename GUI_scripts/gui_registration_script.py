@@ -27,13 +27,6 @@ DATA_SAVE_DIR = config['PATHS']['DATA_SAVE_DIR'] # Keep this for default if no s
 EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
 EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
-# Remove global MODEL_X_TRANSLATION loading, will be done in main conditionally
-# if USE_MODEL_X:
-#     DEVICE = 'cpu'
-#     MODEL_X_TRANSLATION = torch.load(MODEL_X_TRANSLATION_PATH, map_location=DEVICE, weights_only=False)
-#     MODEL_X_TRANSLATION.eval()
-# else:
-#     MODEL_X_TRANSLATION = None
 
 def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_model_x, save_dirname):
     global MODEL_FEATURE_DETECT
@@ -61,7 +54,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
     print(original_data.shape)
-
+    # MODEL_FEATURE_DETECT PART
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
@@ -87,28 +80,39 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
             f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
         print(f'NO SURFACE DETECTED: {scan_num}')
         return None
+    if EXPECTED_SURFACES>1:
+        partition_coord = np.ceil(np.mean(np.mean(surface_coords[-2:],axis=1))).astype(int)
+    else:
+        partition_coord = None
 
     # FLATTENING PART
     pbar.set_description(desc = f'Flattening {scan_num}.....')
     # print('SURFACE COORDS:',surface_coords)
     static_flat = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(0,1)))
     top_surf = True
-    for i in range(surface_coords.shape[0]):
-        UP_flat,DOWN_flat = surface_coords[i,0], surface_coords[i,1]
-        UP_flat = max(UP_flat,0)
-        DOWN_flat = min(DOWN_flat, cropped_original_data.shape[2])
-        cropped_original_data = flatten_data(cropped_original_data,UP_flat,DOWN_flat,top_surf,disable_tqdm,scan_num)
-        top_surf = False
+    if surface_coords.shape[0]>1:
+        for _ in range(2):
+            if top_surf:
+                cropped_original_data = flatten_data(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
+            else:
+                cropped_original_data = flatten_data(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
+            top_surf = False
+    else:
+        cropped_original_data = flatten_data(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
     # Y-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} Y-Motion.....')
     top_surf = True
-    for i in range(surface_coords.shape[0]):
-        UP_y,DOWN_y = surface_coords[i,0], surface_coords[i,1]
-        UP_y = max(UP_y,0)
-        DOWN_y = min(DOWN_y, cropped_original_data.shape[2])
-        cropped_original_data = y_motion_correcting(cropped_original_data,UP_y,DOWN_y,top_surf,disable_tqdm,scan_num)
-        top_surf = False
+    if surface_coords.shape[0]>1:
+        for _ in range(2):
+            if top_surf:
+                cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
+            else:
+                cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
+            top_surf = False
+    else:
+        cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
+
 
     # X-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
@@ -124,7 +128,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         with open(f'debugs/debug{scan_num}.txt', 'a') as f:
             f.write(f'NO SURFACE OR CELLS DETECTED: {scan_num}\n')
         return None
-
+    
     enface_extraction_rows = []
     if surface_coords is not None:
         static_y_motion = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(1,2)))    
@@ -151,7 +155,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     # print('DOWN_x:',DOWN_x)
     # # print('VALID ARGS: ',valid_args)
     # print('ENFACE EXTRACTION ROWS: ',enface_extraction_rows)
-    # Pass MODEL_X_TRANSLATION (which might be None) to all_trans_x
     tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num, MODEL_X_TRANSLATION)
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='X-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
@@ -159,12 +162,12 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     pbar.set_description(desc = 'Saving Data.....')
     if cropped_original_data.dtype != np.float64:
         cropped_original_data = cropped_original_data.astype(np.float64)
-    # Use the provided save_dirname if available, otherwise use the default DATA_SAVE_DIR
-    folder_save = save_dirname if save_dirname else DATA_SAVE_DIR
+    folder_save = DATA_SAVE_DIR
     os.makedirs(folder_save,exist_ok=True)
-    hdf5_filename = os.path.join(folder_save, f'{scan_num}.h5') # Use os.path.join for path construction
+    hdf5_filename = f'{folder_save}{scan_num}.h5'
     with h5py.File(hdf5_filename, 'w') as hf:
         hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
+
 
 def run_pipeline(disable_tqdm=False, use_model_x=False, save_dirname=None):
     data_dirname = DATA_LOAD_DIR
