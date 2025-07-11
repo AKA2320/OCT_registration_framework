@@ -107,7 +107,6 @@ class PathLoaderApp(QWidget):
         self.registration_error_ready.connect(self.append_registration_output) # Appending errors to log
         self.registration_finished.connect(self.process_finished)
         self.registration_process_error.connect(self.process_error)
-
         self.register_layout.addWidget(QLabel("Select Directory for Registration:"))
         self.browse_dir_btn = QPushButton("Browse Directory...")
         self.browse_dir_btn.setToolTip("Select a directory containing data for registration.")
@@ -319,10 +318,10 @@ class PathLoaderApp(QWidget):
              QMessageBox.warning(self, "Warning", "No output directory has been selected for registration.")
              return
 
-        registration_script = os.path.join(os.path.dirname(__file__), "GUI_scripts/gui_registration_script.py")
-        if not os.path.exists(registration_script):
-            QMessageBox.critical(self, "Error", f"Registration script not found: {registration_script}\n")
-            return
+        registration_script = "GUI_scripts.gui_registration_script"
+        # if not os.path.exists(registration_script):
+        #     QMessageBox.critical(self, "Error", f"Registration script not found: {registration_script}\n")
+        #     return
 
         self.output_log.clear()
         self.status_label_load.setText(f"Registration process initiated in 'Register Data' tab for: {os.path.basename(path_to_register)}...")
@@ -402,9 +401,11 @@ class RegistrationThread(QThread):
         # Start the process
         try:
             # Build command arguments, including --use-model-x and --save-dirname
-            command_args = [sys.executable, self.script_path, "--dirname", self.directory_path, "--save-dirname", self.save_directory_path, "--disable-tqdm"]
+            command_args = [sys.executable, "-m", self.script_path, "--dirname", self.directory_path, "--save-dirname", self.save_directory_path, "--disable-tqdm", False]
             if self.use_model_x:
-                command_args.append("--use-model-x")
+                command_args.extend(["--use-model-x", True])
+            else:
+                command_args.extend(["--use-model-x", False])
 
             print(f"GUI Thread: Starting process with command: {command_args}")
 
