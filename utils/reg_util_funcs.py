@@ -53,20 +53,7 @@ def all_tran_flat(data,static_flat,disable_tqdm, scan_num):
 def flatten_data(data,slice_coords,top_surf, partition_coord,disable_tqdm, scan_num):
     temp_sliced_data = data[:, np.r_[tuple(np.r_[start:end] for start, end in slice_coords)], :].copy()
     static_flat = np.argmax(np.sum(temp_sliced_data,axis=(0,1)))
-    # finding the bright points in all images in standard interference
-    # temp_rotated_data = data[:,UP_flat:DOWN_flat,:].transpose(2,1,0)
-    # nn = [np.argmax(np.sum(temp_rotated_data[i],axis=1)) for i in range(temp_rotated_data.shape[0])]
-    # tf_all_nn = np.tile(np.eye(3),(temp_rotated_data.shape[0],1,1))
-    # for i in range(tf_all_nn.shape[0]):
-    #     tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(-(nn[0]-nn[i]),0)))
-    
 
-    # if partition_coord:
-    #     for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[:,:DOWN_flat,i]  = warp(data[:,:DOWN_flat,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
-    # else:
-    #     for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[:,UP_flat:,i]  = warp(data[:,UP_flat:,i] ,AffineTransform(matrix=tf_all_nn[i]),order=3)
     tr_all = all_tran_flat(temp_sliced_data,static_flat,disable_tqdm,scan_num)
     if partition_coord is None:
         for i in tqdm(range(data.shape[2]),desc='Flat warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
@@ -117,26 +104,6 @@ def all_trans_y(data,static_y_motion,disable_tqdm,scan_num):
     return transforms_all
 
 def y_motion_correcting(data,slice_coords,top_surf,partition_coord,disable_tqdm,scan_num):
-    # static_y_motion = np.argmax(np.sum(data[:,UP_y:DOWN_y,:],axis=(1,2)))
-    # # finding the bright points in all images in standard interference
-    # nn = [np.argmax(np.sum(data[i][UP_y:DOWN_y],axis=1)) for i in range(data.shape[0])]
-    # tf_all_nn = np.tile(np.eye(3),(data.shape[0],1,1))
-    # for i in range(tf_all_nn.shape[0]):
-    #     tf_all_nn[i] = np.dot(tf_all_nn[i],AffineTransform(translation=(0,-(nn[0]-nn[i]))))
-    # if top_surf:
-    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tf_all_nn[i]),order=3)
-    # else:
-    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tf_all_nn[i]),order=3)
-    # tr_all_y = all_trans_y(data,UP_y,DOWN_y,static_y_motion,disable_tqdm,scan_num)
-    # if top_surf:
-    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[i,:DOWN_y]  = warp(data[i,:DOWN_y],AffineTransform(matrix=tr_all_y[i]),order=3)
-    # else:
-    #     for i in tqdm(range(data.shape[0]),desc='y-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-    #         data[i,UP_y:]  = warp(data[i,UP_y:],AffineTransform(matrix=tr_all_y[i]),order=3)
-
     temp_sliced_data = data[:, np.r_[tuple(np.r_[start:end] for start, end in slice_coords)], :].copy()
     static_y_motion = np.argmax(np.sum(temp_sliced_data,axis=(1,2)))
     tr_all_y = all_trans_y(temp_sliced_data,static_y_motion,disable_tqdm,scan_num)
