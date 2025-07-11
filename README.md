@@ -16,20 +16,20 @@ This project provides a framework for performing registration of OCT volumes, wi
 
 ## Installation
 
-You can install the `OCT_registration_framework` package using pip or uv. It's highly recommended to create a virtual environment before installing.
+**Note:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
 
-**Note:** Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
+You can install the `OCT_registration_framework` package using pip or uv. It's highly recommended to create a virtual environment before installing.
 
 **Using pip (recommended):**
 
-1.  **Clone the feature_gui branch:**
+1.  **Clone the repository:**
     ```shell
     git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
     ```shell
-    python3 -m venv .venv
+    python3.12 -m venv .venv
     source .venv/bin/activate # On Linux/macOS
     # .venv\Scripts\activate # On Windows
     ```
@@ -40,32 +40,36 @@ You can install the `OCT_registration_framework` package using pip or uv. It's h
 
 **Using uv (faster than pip):**
 
-1.  **Clone the feature_gui branch:**
+1.  **Clone the repository:**
     ```shell
     git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create and activate a virtual environment:**
     ```shell
-    python3 -m venv .venv
+    python3.12 -m venv .venv
     source .venv/bin/activate # On Linux/macOS
     # .venv\Scripts\activate # On Windows
     ```
-3.  **Install the package:**
+3.  **Install uv (if you don't have it):**
+    ```shell
+    pip install uv
+    ```
+4.  **Install the package:**
     ```shell
     uv pip install .
     ```
 
 **Using uv with lock file (recommended for reproducible environments):**
 
-1.  **Clone the feature_gui branch:**
+1.  **Clone the repository:**
     ```shell
     git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
-2.  **Create and activate a virtual environment:**
+2.  **Create and activate a virtual environment (not required but recommended):**
     ```shell
-    python3 -m venv .venv
+    python3.12 -m venv .venv
     source .venv/bin/activate # On Linux/macOS
     # .venv\Scripts\activate # On Windows
     ```
