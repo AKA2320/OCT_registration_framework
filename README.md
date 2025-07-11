@@ -39,19 +39,20 @@ It's highly recommended to create a virtual environment before installing.
 **Install the package:**
 You can install the `OCT_registration_framework` package using `pip` or `uv`.
 
-*   **Using pip (recommended):**
+*   **Using pip:**
     ```shell
     pip install .
     ```
 *   **Using uv (faster than pip):**
     ```shell
+    pip install uv
     uv pip install .
     ```
 
 **Using uv with lock file (recommended for reproducible environments):**
 
 1.  **Install uv:**
-    *   Follow the installation instructions in the official uv documentation. Search online for "uv installation guide".
+    * Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 2.  **Run uv sync:**
     ```shell
     uv sync
