@@ -18,105 +18,69 @@ This project provides a framework for performing registration of OCT volumes, wi
 
 **Note:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
 
-You can install the `OCT_registration_framework` package using pip or uv. It's highly recommended to create a virtual environment before installing.
-
-**Using pip (recommended):**
+It's highly recommended to create a virtual environment before installing.
 
 1.  **Clone the repository:**
     ```shell
     git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
-2.  **Create and activate a virtual environment:**
+2.  **Create a virtual environment:**
     ```shell
     python3.12 -m venv .venv
+    ```
+3.  **Activate the virtual environment:**
+    ```shell
     source .venv/bin/activate # On Linux/macOS
     # .venv\Scripts\activate # On Windows
     ```
-3.  **Install the package:**
+
+
+**Install the package:**
+You can install the `OCT_registration_framework` package using `pip` or `uv`.
+
+*   **Using pip (recommended):**
     ```shell
     pip install .
     ```
-
-**Using uv (faster than pip):**
-
-1.  **Clone the repository:**
-    ```shell
-    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
-    cd OCT_registration_framework
-    ```
-2.  **Create and activate a virtual environment:**
-    ```shell
-    python3.12 -m venv .venv
-    source .venv/bin/activate # On Linux/macOS
-    # .venv\Scripts\activate # On Windows
-    ```
-3.  **Install uv (if you don't have it):**
-    ```shell
-    pip install uv
-    ```
-4.  **Install the package:**
+*   **Using uv (faster than pip):**
     ```shell
     uv pip install .
     ```
 
 **Using uv with lock file (recommended for reproducible environments):**
 
-1.  **Clone the repository:**
-    ```shell
-    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
-    cd OCT_registration_framework
-    ```
-2.  **Create and activate a virtual environment (not required but recommended):**
-    ```shell
-    python3.12 -m venv .venv
-    source .venv/bin/activate # On Linux/macOS
-    # .venv\Scripts\activate # On Windows
-    ```
-3.  **Install dependencies from the lock file:**
+1.  **Install uv:**
+    *   Follow the installation instructions in the official uv documentation. Search online for "uv installation guide".
+2.  **Run uv sync:**
     ```shell
     uv sync
     ```
 
 ## Usage
 
-For the feature_gui branch, the primary method of interaction is through the graphical interface (`GUI_scripts/pyside_gui.py`). The GUI scripts are located in the `GUI_scripts/` folder.
+For the `feature_gui` branch, the primary method of interaction is through the graphical interface (`pyside_gui.py`).
 
 1.  **Prepare your OCT data:**
-    *   The framework supports `.h5` and `.dcm` OCT data formats.
-    *   Ensure your data is accessible.
+    *   The framework supports `.h5` and `.dcm` OCT data formats. Ensure your data is accessible.
 
-2.  **Run the GUI application:**
+2.  **Run the GUI:**
     *   After installing the package and activating your virtual environment, run the GUI script:
         ```shell
-        python GUI_scripts/pyside_gui.py
+        python pyside_gui.py
         ```
     *   Use the GUI to select your input data directory, specify the output save directory, and choose whether to use the Model X translation.
 
-3.  **Configuration via `datapaths.yaml` (Optional for GUI):**
-    *   While the GUI allows you to specify input/output paths, the `datapaths.yaml` file still contains default paths and configurations for models and other parameters. You may need to update this file for model paths or other settings not exposed in the GUI.
-
-## Configuration
-
-The `datapaths.yaml` file is used to configure the project, particularly for model paths and default settings. It contains the following parameters:
-
-*   `DATA_LOAD_DIR`: Default path to the directory containing the input OCT data (can be overridden by GUI).
-*   `DATA_SAVE_DIR`: Default path to the directory where the registered OCT data will be saved (can be overridden by GUI).
-*   `MODEL_FEATURE_DETECT_PATH`: Path to the YOLO model for feature detection.
-*   `MODEL_X_TRANSLATION_PATH`: Path to the "TransMorph" model for X-motion correction.
-*    `EXPECTED_SURFACES`: Expected number of surfaces.
-*    `EXPECTED_CELLS`: Expected number of cells.
-*   `USE_MODEL_X`: A flag to indicate whether to use MODEL_X_TRANSLATION (can be overridden by the GUI).
 
 ## Key Files
 
-*   `GUI_scripts/pyside_gui.py`: The main PySide6 GUI application.
+*   `pyside_gui.py`: The main PySide6 GUI application.
 *   `registration_script.py`: The backend script for performing OCT volume registration (typically run via the GUI).
 *   `GUI_scripts/gui_reg_util_funcs.py`: Utility functions specific to the GUI registration process.
 *   `GUI_scripts/gui_util_funcs.py`: General utility functions for the GUI.
 *   `funcs_transmorph.py`: Contains the implementation of the "TransMorph" model.
 *   `utils/reg_util_funcs.py`: Provides utility functions for registration, including motion correction, flattening, and feature detection.
-*   `datapaths.yaml`: Configuration file for specifying file paths and other parameters.
+*   `datapaths.yaml`: Configuration file for specifying file paths and other parameters. This file contains default paths and configurations for models and other parameters, some of which can be overridden by the GUI.
 *   `pyproject.toml`: Project configuration and dependencies.
 *   `uv.lock`: Reproduce exact environment using UV.
 
