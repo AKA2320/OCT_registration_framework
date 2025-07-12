@@ -41,11 +41,8 @@ def all_tran_flat(data,static_flat,disable_tqdm, scan_num):
                 past_shift += move[0]
             temp_tform_manual = AffineTransform(translation=(past_shift*2,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
-        except:
-            with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                f.write(f'FLAT motion EVERYTHIN FAILED HERE\n')
-                f.write(f'NAME: {scan_num}\n')
-                f.write(f'Ith: {i}\n')
+        except Exception as e:
+            raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
@@ -94,11 +91,12 @@ def all_trans_y(data,static_y_motion,disable_tqdm,scan_num):
                 past_shift += move[0]
             temp_tform_manual = AffineTransform(matrix = AffineTransform(translation=(0,past_shift*2)))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
-        except:
-            with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                f.write(f'Y motion EVERYTHIN FAILED HERE\n')
-                f.write(f'NAME: {scan_num}\n')
-                f.write(f'Ith: {i}\n')
+        except Exception as e:
+            # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+            #     f.write(f'Y motion EVERYTHIN FAILED HERE\n')
+            #     f.write(f'NAME: {scan_num}\n')
+            #     f.write(f'Ith: {i}\n')
+            raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
@@ -201,12 +199,12 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                 else:
                     cross_section = 0
             except Exception as e:
-                with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                    f.write(f'Cell cross_section failed here\n')
-                    f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
-                    f.write(f'NAME: {scan_num}\n')
-                    f.write(f'Ith: {i}\n')
-                    f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
+                # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+                #     f.write(f'Cell cross_section failed here\n')
+                #     f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
+                #     f.write(f'NAME: {scan_num}\n')
+                #     f.write(f'Ith: {i}\n')
+                #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
                 raise Exception(e)
                 cross_section = 0
             enface_shape = data[:,0,:].shape[1]
@@ -223,12 +221,12 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                             temp_enface_shift = get_line_shift(data[i,enface_extraction_rows[enf_idx]]
                                                                ,data[i+1,enface_extraction_rows[enf_idx]],enface_shape)
                     except Exception as e:
-                        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                            f.write(f'TEMP enface shift failed here\n')
-                            f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
-                            f.write(f'NAME: {scan_num}\n')
-                            f.write(f'Ith: {i}\n')
-                            f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
+                        # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+                        #     f.write(f'TEMP enface shift failed here\n')
+                        #     f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
+                        #     f.write(f'NAME: {scan_num}\n')
+                        #     f.write(f'Ith: {i}\n')
+                        #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
                         raise Exception(e)
                         temp_enface_shift = 0
                     enface_wraps.append(temp_enface_shift)
@@ -238,12 +236,12 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
             gc.collect()
         except Exception as e:
-            with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-                f.write(f'X motion EVERYTHIN FAILED HERE\n')
-                f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
-                f.write(f'NAME: {scan_num}\n')
-                f.write(f'Ith: {i}\n')
-                f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
+            # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+            #     f.write(f'X motion EVERYTHIN FAILED HERE\n')
+            #     f.write(f'UP_x: {UP_x}, DOWN_x: {DOWN_x}\n')
+            #     f.write(f'NAME: {scan_num}\n')
+            #     f.write(f'Ith: {i}\n')
+            #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
             raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
