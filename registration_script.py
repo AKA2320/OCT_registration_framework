@@ -66,9 +66,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     if surface_coords is None:
-        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-            f.write(f'NO SURFACE DETECTED: {scan_num}\n')
-            f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
         print(f'NO SURFACE DETECTED: {scan_num}')
         return None
     if EXPECTED_SURFACES>1:
@@ -104,7 +101,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     else:
         cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
-
     # X-MOTION PART
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
@@ -116,8 +112,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
 
     if (cells_coords is None) and (surface_coords is None):
         print(f'NO SURFACE OR CELLS DETECTED: {scan_num}')
-        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-            f.write(f'NO SURFACE OR CELLS DETECTED: {scan_num}\n')
         return None
     
     enface_extraction_rows = []
@@ -154,6 +148,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     if cropped_original_data.dtype != np.float64:
         cropped_original_data = cropped_original_data.astype(np.float64)
     folder_save = DATA_SAVE_DIR
+    if not folder_save.endswith('/'):
+        folder_save = folder_save + '/'
     os.makedirs(folder_save,exist_ok=True)
     hdf5_filename = f'{folder_save}{scan_num}.h5'
     with h5py.File(hdf5_filename, 'w') as hf:
