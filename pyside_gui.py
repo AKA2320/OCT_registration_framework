@@ -2,6 +2,7 @@
 
 import sys
 import os
+from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -86,14 +87,27 @@ class PathLoaderApp(QWidget):
         self.register_layout.addWidget(self.registration_path_display)
 
         # Add Save Directory selection
-        self.register_layout.addWidget(QLabel("Select Directory for Saving Results:"))
+        self.register_layout.addWidget(QLabel("Select Directory for Saving Results (Default: 'output/'):"))
         self.browse_save_dir_btn = QPushButton("Browse Save Directory...")
         self.register_layout.addWidget(self.browse_save_dir_btn)
 
-        self.save_path_display = QLineEdit("No directory selected for saving")
+        self.save_path_display = QLineEdit("output/") 
+        self.selected_save_path = "output/"
         self.save_path_display.setReadOnly(True)
         self.save_path_display.setStyleSheet("color: #777; font-style: italic;")
         self.register_layout.addWidget(self.save_path_display)
+
+        # New: EXPECTED_CELLS input
+        self.register_layout.addWidget(QLabel("Expected Cells (int, default: 2):"))
+        self.expected_cells_input = QLineEdit("2") # Default value 2
+        self.expected_cells_input.setValidator(QIntValidator()) # Only allow integer input
+        self.register_layout.addWidget(self.expected_cells_input)
+
+        # New: EXPECTED_SURFACES input
+        self.register_layout.addWidget(QLabel("Expected Surfaces (int, default: 2):"))
+        self.expected_surfaces_input = QLineEdit("2") # Default value 2
+        self.expected_surfaces_input.setValidator(QIntValidator()) # Only allow integer input
+        self.register_layout.addWidget(self.expected_surfaces_input)
 
         self.use_model_x_checkbox = QCheckBox("USE_MODEL_X")
         self.register_layout.addWidget(self.use_model_x_checkbox)
@@ -181,11 +195,12 @@ class PathLoaderApp(QWidget):
     def select_save_directory(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Select Directory for Saving Results")
         if not dir_path:
-            self.save_path_display.setText("No directory selected for saving")
-            self.save_path_display.setStyleSheet("color: #777; font-style: italic;")
-            if self.selected_register_path:
-                self.register_btn.setEnabled(False)
-            return
+            dir_path = "output/"
+            # self.save_path_display.setText("No directory selected for saving")
+            # self.save_path_display.setStyleSheet("color: #777; font-style: italic;")
+            # if self.selected_register_path:
+            #     self.register_btn.setEnabled(False)
+            # return
 
         self.selected_save_path = dir_path
         self.save_path_display.setText(dir_path)
@@ -242,6 +257,13 @@ class PathLoaderApp(QWidget):
         if not path_to_save:
             QMessageBox.warning(self, "Warning", "No output directory has been selected for registration.")
             return
+        
+        try:
+            expected_cells = int(self.expected_cells_input.text())
+            expected_surfaces = int(self.expected_surfaces_input.text())
+        except ValueError:
+            QMessageBox.critical(self, "Input Error", "Expected Cells and Expected Surfaces must be valid integers.")
+            return
 
         registration_script = "GUI_scripts.gui_registration_script"
 
@@ -256,7 +278,8 @@ class PathLoaderApp(QWidget):
         self.browse_dir_btn.setEnabled(False)
         self.cancel_register_btn.setEnabled(True)
 
-        self.registration_thread = RegistrationThread(path_to_register, path_to_save, registration_script, use_model_x, disable_tqdm)
+        self.registration_thread = RegistrationThread(path_to_register, path_to_save, registration_script
+                                                      ,use_model_x, disable_tqdm, expected_cells, expected_surfaces)
         self.registration_thread.output_ready.connect(self.append_registration_output)
         self.registration_thread.error_ready.connect(self.append_registration_output)
         self.registration_thread.finished.connect(self.process_finished)
@@ -291,13 +314,15 @@ class RegistrationThread(QThread):
     process_error_occurred = Signal(QProcess.ProcessError)
     registration_finished = Signal(int)
 
-    def __init__(self, directory_path, save_directory_path, script_path, use_model_x, disable_tqdm):
+    def __init__(self, directory_path, save_directory_path, script_path, use_model_x, disable_tqdm, expected_cells, expected_surfaces):
         super().__init__()
         self.directory_path = directory_path
         self.save_directory_path = save_directory_path
         self.script_path = script_path
         self.use_model_x = use_model_x
         self.disable_tqdm = disable_tqdm
+        self.expected_cells = expected_cells     # Store new parameter
+        self.expected_surfaces = expected_surfaces # Store new parameter
         self.process = None
 
     def run(self):
@@ -308,7 +333,9 @@ class RegistrationThread(QThread):
         self.process.finished.connect(self.handle_process_finished)
 
         try:
-            command_args = [sys.executable, "-m", self.script_path, "--dirname", self.directory_path, "--save-dirname", self.save_directory_path]
+            command_args = [sys.executable, "-m", self.script_path, "--dirname"
+                            , self.directory_path, "--save-dirname", self.save_directory_path,
+                            "--expected-cells", str(self.expected_cells),"--expected-surfaces", str(self.expected_surfaces)]
             if self.use_model_x:
                 command_args.append("--use-model-x")
             if self.disable_tqdm:
