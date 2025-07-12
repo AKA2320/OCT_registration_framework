@@ -23,15 +23,20 @@ SURFACE_Y_PAD = 20
 SURFACE_X_PAD = 10
 CELLS_X_PAD = 5
 # DATA_LOAD_DIR = config['PATHS']['DATA_LOAD_DIR'] # This will now come from command line
-DATA_SAVE_DIR = config['PATHS']['DATA_SAVE_DIR'] # Keep this for default if no save_dirname is provided
-EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
-EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
+# DATA_SAVE_DIR = config['PATHS']['DATA_SAVE_DIR'] # Keep this for default if no save_dirname is provided
+# EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
+# EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 
-def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_model_x, save_dirname):
+def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_model_x, save_dirname, expected_cells, expected_surfaces):
     global MODEL_FEATURE_DETECT
-    # global MODEL_X_TRANSLATION # Removed global
-
+    global MODEL_X_TRANSLATION
+    global EXPECTED_SURFACES
+    global EXPECTED_CELLS
+    print(f"Expected Cells: {expected_cells}")
+    print(f"Expected Surfaces: {expected_surfaces}")
+    EXPECTED_SURFACES = int(expected_surfaces)
+    EXPECTED_CELLS = int(expected_cells)
     MODEL_X_TRANSLATION = None # Initialize to None
     if use_model_x:
         try:
@@ -54,7 +59,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
     print(original_data.shape)
-    # MODEL_FEATURE_DETECT PART
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
@@ -75,9 +79,9 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     # result_list = res[0].summary()
     surface_coords = detect_areas(res_surface[0].summary(),pad_val = SURFACE_Y_PAD, img_shape = test_detect_img.shape[0], expected_num = EXPECTED_SURFACES)
     if surface_coords is None:
-        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-            f.write(f'NO SURFACE DETECTED: {scan_num}\n')
-            f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
+        # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+        #     f.write(f'NO SURFACE DETECTED: {scan_num}\n')
+        #     f.write(f'min range: {cropped_original_data.min(),cropped_original_data.max()}\n')
         print(f'NO SURFACE DETECTED: {scan_num}')
         return None
     if EXPECTED_SURFACES>1:
@@ -86,6 +90,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         partition_coord = None
 
     # FLATTENING PART
+    print('Staring FLattening')
     pbar.set_description(desc = f'Flattening {scan_num}.....')
     # print('SURFACE COORDS:',surface_coords)
     static_flat = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(0,1)))
@@ -101,6 +106,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         cropped_original_data = flatten_data(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
     # Y-MOTION PART
+    print('Staring Y-motion')
     pbar.set_description(desc = f'Correcting {scan_num} Y-Motion.....')
     top_surf = True
     if surface_coords.shape[0]>1:
@@ -115,6 +121,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
 
 
     # X-MOTION PART
+    print('Staring X-motion')
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
     res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu',agnostic_nms = True, augment = True)
@@ -125,8 +132,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
 
     if (cells_coords is None) and (surface_coords is None):
         print(f'NO SURFACE OR CELLS DETECTED: {scan_num}')
-        with open(f'debugs/debug{scan_num}.txt', 'a') as f:
-            f.write(f'NO SURFACE OR CELLS DETECTED: {scan_num}\n')
+        # with open(f'debugs/debug{scan_num}.txt', 'a') as f:
+        #     f.write(f'NO SURFACE OR CELLS DETECTED: {scan_num}\n')
         return None
     
     enface_extraction_rows = []
@@ -162,21 +169,23 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     pbar.set_description(desc = 'Saving Data.....')
     if cropped_original_data.dtype != np.float64:
         cropped_original_data = cropped_original_data.astype(np.float64)
-    folder_save = DATA_SAVE_DIR
-    os.makedirs(folder_save,exist_ok=True)
-    hdf5_filename = f'{folder_save}{scan_num}.h5'
+    # folder_save = save_dirname
+    os.makedirs(save_dirname,exist_ok=True)
+    if not save_dirname.endswith('/'):
+        save_dirname = save_dirname + '/'
+    hdf5_filename = f'{save_dirname}{scan_num}.h5'
     with h5py.File(hdf5_filename, 'w') as hf:
         hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
 
 
-def run_pipeline(disable_tqdm=False, use_model_x=False, save_dirname=None):
+def run_pipeline(disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces):
     data_dirname = DATA_LOAD_DIR
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
     # Use provided save_dirname for checking existing files as well
-    check_save_dir = save_dirname if save_dirname else DATA_SAVE_DIR
-    if os.path.exists(check_save_dir):
-        done_scans = set([i.removesuffix('.h5') for i in os.listdir(check_save_dir) if (i.startswith('scan'))])
+    # check_save_dir = save_dirname if save_dirname else DATA_SAVE_DIR
+    if os.path.exists(save_dirname):
+        done_scans = set([i.removesuffix('.h5') for i in os.listdir(save_dirname) if (i.startswith('scan'))])
         print(done_scans)
     else:
         done_scans={}
@@ -192,23 +201,28 @@ def run_pipeline(disable_tqdm=False, use_model_x=False, save_dirname=None):
     for scan_num in pbar:
         pbar.set_description(desc = f'Processing {scan_num}')
         # Pass use_model_x and save_dirname to the main function
-        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = disable_tqdm, save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname) # Pass disable_tqdm here too
+        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = disable_tqdm, save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces) # Pass disable_tqdm here too
 
 
 @click.command()
 @click.option('--dirname', type=click.Path(exists=True), help='Directory to load data from')
-@click.option('--use-model-x', is_flag=True, default=True, help='Use Model X for translation correction')
-@click.option('--disable-tqdm', is_flag=True, default=False, help='Disable tqdm progress bars')
+@click.option('--use-model-x', is_flag=True, default=False, help='Use Model X for translation correction')
+@click.option('--disable-tqdm', is_flag=True, default=True, help='Disable tqdm progress bars')
 @click.option('--save-dirname', type=click.Path(), default=None, help='Directory to save output data') # Added save-dirname option
-def cli(dirname, use_model_x, disable_tqdm, save_dirname):
+@click.option('--expected-cells', type=int,required=True, default=2, help='Expected Cell patches in the dataset')
+@click.option('--expected-surfaces', type=int, required=True, default=2, help='Expected Surfaces in the dataset')
+def cli(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces):
     global DATA_LOAD_DIR
     if dirname:
         DATA_LOAD_DIR = dirname
     print(f"Data Load Directory: {DATA_LOAD_DIR}")
     print(f"Use Model X: {use_model_x}")
+    print(f"Disable Tqdm: {disable_tqdm}")
+    print(f"Expected Cells: {expected_cells}")
+    print(f"Expected Surfaces: {expected_surfaces}")
     print(f"Save Data Directory: {save_dirname}") # Print the save directory
     # Pass all arguments to run_pipeline
-    run_pipeline(disable_tqdm=disable_tqdm, use_model_x=use_model_x, save_dirname=save_dirname)
+    run_pipeline(disable_tqdm=disable_tqdm, use_model_x=use_model_x, save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces)
 
 if __name__ == "__main__":
     cli()
