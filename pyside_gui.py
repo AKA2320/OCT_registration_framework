@@ -171,21 +171,31 @@ class PathLoaderApp(QWidget):
     def update_load_path(self, path):
         self.selected_load_path = path
         self.path_display_load.setText(path)
-        self.path_display_load.setStyleSheet("color: #000; font-style: normal;")
+        self.path_display_load.setStyleSheet("color: #999; font-style: normal;")
         self.status_label_load.setText("Path selected for loading. Ready to load.")
         self.load_btn.setEnabled(True)
 
     def select_registration_directory(self):
-        dir_path = QFileDialog.getExistingDirectory(self, "Select Directory for Registration")
+        dir_path, _ = QFileDialog.getOpenFileName(self, "Select Directory for Registration")
         if not dir_path:
             self.register_btn.setEnabled(False)
             self.registration_path_display.setText("No directory selected for registration")
             self.registration_path_display.setStyleSheet("color: #777; font-style: italic;")
             return
+        
+        # if dir_path.lower().endswith(('.h5', '.hdf5')):
+        #     # self.update_load_path(dir_path)
+        if dir_path.lower().endswith('.dcm'):
+            dir_path = os.path.dirname(dir_path)
+            # self.update_load_path(dir_path)
+        elif not dir_path.lower().endswith(('.h5', '.hdf5')):
+            QMessageBox.warning(self, "Unsupported File", "Please select a .h5, .hdf5, or .dcm file.")
+            self.register_btn.setEnabled(False)
+            return
 
         self.selected_register_path = dir_path
         self.registration_path_display.setText(dir_path)
-        self.registration_path_display.setStyleSheet("color: #000; font-style: normal;")
+        self.registration_path_display.setStyleSheet("color: #999; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
@@ -204,7 +214,7 @@ class PathLoaderApp(QWidget):
 
         self.selected_save_path = dir_path
         self.save_path_display.setText(dir_path)
-        self.save_path_display.setStyleSheet("color: #000; font-style: normal;")
+        self.save_path_display.setStyleSheet("color: #999; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
