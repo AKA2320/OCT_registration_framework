@@ -49,10 +49,10 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
             print("Proceeding without Model X translation.")
             MODEL_X_TRANSLATION = None
 
-    if not os.path.exists(dirname):
-        raise FileNotFoundError(f"Directory {dirname} not found")
-    if not os.path.exists(os.path.join(dirname, scan_num)):
-        raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
+    # if not os.path.exists(dirname):
+    #     raise FileNotFoundError(f"Directory {dirname} not found")
+    # if not os.path.exists(os.path.join(dirname, scan_num)):
+    #     raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
     if data_type=='h5':
         original_data = load_h5_data(dirname,scan_num)
     elif data_type=='dcm':
@@ -162,7 +162,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     # print('DOWN_x:',DOWN_x)
     # # print('VALID ARGS: ',valid_args)
     # print('ENFACE EXTRACTION ROWS: ',enface_extraction_rows)
-    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num, MODEL_X_TRANSLATION)
+    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows
+                         ,disable_tqdm,scan_num, MODEL_X_TRANSLATION)
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='X-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
 
@@ -178,8 +179,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
 
 
-def run_pipeline(disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces):
-    data_dirname = DATA_LOAD_DIR
+def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces):
+    data_dirname = dirname
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
     # Use provided save_dirname for checking existing files as well
@@ -189,40 +190,47 @@ def run_pipeline(disable_tqdm, use_model_x, save_dirname, expected_cells, expect
         print(done_scans)
     else:
         done_scans={}
-    if os.listdir(DATA_LOAD_DIR)[0].endswith('.dcm'):
+    if data_dirname.lower().endswith('.h5'):
+        data_type = 'h5'
+        scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+    else:
         data_type = 'dcm'
+        scans = [data_dirname.split('/')[-1]]
     # scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan')) and (i+'.h5' not in done_scans)]
     # scans = natsorted(scans)
-    scans = ['data'] ################ remove while running
+    # scans = ['data'] ################ remove while running
     # data_type = scans[0].split('.')[-1]
-    data_type = 'dcm'
-    print('REMAINING',scans)
+    # data_type = 'dcm'
+    # print('REMAINING',scans)
+ 
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable=disable_tqdm)
     for scan_num in pbar:
         pbar.set_description(desc = f'Processing {scan_num}')
         # Pass use_model_x and save_dirname to the main function
-        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = disable_tqdm, save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces) # Pass disable_tqdm here too
-
+        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = disable_tqdm, 
+             save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname, 
+             expected_cells = expected_cells, expected_surfaces = expected_surfaces) # Pass disable_tqdm here too
 
 @click.command()
-@click.option('--dirname', type=click.Path(exists=True), help='Directory to load data from')
+@click.option('--dirname', type=click.Path(), help='File/Directory to load data from')
 @click.option('--use-model-x', is_flag=True, default=False, help='Use Model X for translation correction')
-@click.option('--disable-tqdm', is_flag=True, default=True, help='Disable tqdm progress bars')
+@click.option('--disable-tqdm', is_flag=True, default=False, help='Disable tqdm progress bars')
 @click.option('--save-dirname', type=click.Path(), default=None, help='Directory to save output data') # Added save-dirname option
 @click.option('--expected-cells', type=int,required=True, default=2, help='Expected Cell patches in the dataset')
 @click.option('--expected-surfaces', type=int, required=True, default=2, help='Expected Surfaces in the dataset')
 def cli(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces):
-    global DATA_LOAD_DIR
-    if dirname:
-        DATA_LOAD_DIR = dirname
-    print(f"Data Load Directory: {DATA_LOAD_DIR}")
+    # global DATA_LOAD_DIR
+    # if dirname:
+    #     DATA_LOAD_DIR = dirname
+    print(f"Data Load Directory: {dirname}")
     print(f"Use Model X: {use_model_x}")
     print(f"Disable Tqdm: {disable_tqdm}")
     print(f"Expected Cells: {expected_cells}")
     print(f"Expected Surfaces: {expected_surfaces}")
     print(f"Save Data Directory: {save_dirname}") # Print the save directory
     # Pass all arguments to run_pipeline
-    run_pipeline(disable_tqdm=disable_tqdm, use_model_x=use_model_x, save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces)
+    run_pipeline(dirname = dirname, disable_tqdm=disable_tqdm, use_model_x=use_model_x, 
+                 save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces)
 
 if __name__ == "__main__":
     cli()
