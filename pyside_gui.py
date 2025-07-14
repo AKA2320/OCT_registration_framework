@@ -55,6 +55,7 @@ class PathLoaderApp(QWidget):
         self.load_layout.addWidget(self.path_display_load)
 
         self.visualize_checkbox = QCheckBox("Visualize with napari")
+        self.visualize_checkbox.setChecked(True) 
         self.load_layout.addWidget(self.visualize_checkbox)
 
         self.load_btn = QPushButton("Load Data")
@@ -110,9 +111,11 @@ class PathLoaderApp(QWidget):
         self.register_layout.addWidget(self.expected_surfaces_input)
 
         self.use_model_x_checkbox = QCheckBox("USE_MODEL_X")
+        self.use_model_x_checkbox.setChecked(True)  # Set default to TRUE
         self.register_layout.addWidget(self.use_model_x_checkbox)
 
         self.disable_tqdm_checkbox = QCheckBox("DISABLE_TQDM")
+        self.disable_tqdm_checkbox.setChecked(True)  # Set default to TRUE
         self.register_layout.addWidget(self.disable_tqdm_checkbox)
 
         self.register_btn = QPushButton("Register Data")
