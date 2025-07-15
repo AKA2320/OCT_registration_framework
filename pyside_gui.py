@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QProcess, QThread, Signal
 import napari
-from GUI_scripts.gui_util_funcs import GUI_load_h5, GUI_load_dcm
+from utils.util_funcs import GUI_load_h5, GUI_load_dcm
 
 # Main Application Window
 class PathLoaderApp(QWidget):
@@ -174,7 +174,7 @@ class PathLoaderApp(QWidget):
     def update_load_path(self, path):
         self.selected_load_path = path
         self.path_display_load.setText(path)
-        self.path_display_load.setStyleSheet("color: #999; font-style: normal;")
+        self.path_display_load.setStyleSheet("color: #fff; font-style: normal;")
         self.status_label_load.setText("Path selected for loading. Ready to load.")
         self.load_btn.setEnabled(True)
 
@@ -198,7 +198,7 @@ class PathLoaderApp(QWidget):
 
         self.selected_register_path = dir_path
         self.registration_path_display.setText(dir_path)
-        self.registration_path_display.setStyleSheet("color: #999; font-style: normal;")
+        self.registration_path_display.setStyleSheet("color: #fff; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
@@ -217,7 +217,7 @@ class PathLoaderApp(QWidget):
 
         self.selected_save_path = dir_path
         self.save_path_display.setText(dir_path)
-        self.save_path_display.setStyleSheet("color: #999; font-style: normal;")
+        self.save_path_display.setStyleSheet("color: #fff; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
