@@ -1,4 +1,4 @@
-# from pydicom import dcmread
+
 import matplotlib.pylab as plt
 import numpy as np
 import os
@@ -28,22 +28,28 @@ EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
 EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 if USE_MODEL_X:
-    DEVICE = 'cpu'
-    MODEL_X_TRANSLATION = torch.load(MODEL_X_TRANSLATION_PATH, map_location=DEVICE, weights_only=False)
-    MODEL_X_TRANSLATION.eval()
+    try:
+        DEVICE = 'cpu'
+        MODEL_X_TRANSLATION = torch.load(MODEL_X_TRANSLATION_PATH, map_location=DEVICE, weights_only=False)
+        MODEL_X_TRANSLATION.eval()
+        print("Model X loaded successfully.")
+    except Exception as e:
+        print(f"Error loading Model X: {e}")
+        print("Proceeding without Model X translation.")
+        MODEL_X_TRANSLATION = None
 else:
     MODEL_X_TRANSLATION = None
 
 def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     global MODEL_FEATURE_DETECT
     global MODEL_X_TRANSLATION
-    if not os.path.exists(dirname):
-        raise FileNotFoundError(f"Directory {dirname} not found")
-    if not os.path.exists(os.path.join(dirname, scan_num)):
-        raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
     if data_type=='h5':
+        if not os.path.exists(dirname):
+            raise FileNotFoundError(f"Scan {dirname} not found")
         original_data = load_h5_data(dirname,scan_num)
     elif data_type=='dcm':
+        if not os.path.exists(dirname):
+            raise FileNotFoundError(f"Directory {dirname} not found")
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
@@ -140,7 +146,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     # print('DOWN_x:',DOWN_x)
     # # print('VALID ARGS: ',valid_args)
     # print('ENFACE EXTRACTION ROWS: ',enface_extraction_rows)
-    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,scan_num, MODEL_X_TRANSLATION)
+    tr_all = all_trans_x(cropped_original_data,UP_x,DOWN_x,valid_args,enface_extraction_rows
+                         ,disable_tqdm,scan_num, MODEL_X_TRANSLATION)
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='X-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
 
@@ -160,17 +167,23 @@ if __name__ == "__main__":
     data_dirname = DATA_LOAD_DIR
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
-    if os.path.exists(DATA_SAVE_DIR):
-        done_scans = set([i.removesuffix('.h5') for i in os.listdir(DATA_SAVE_DIR) if (i.startswith('scan'))])
-        print(done_scans)
-    else:
-        done_scans={}
+    # if os.path.exists(DATA_SAVE_DIR):
+    #     done_scans = set([i.removesuffix('.h5') for i in os.listdir(DATA_SAVE_DIR) if (i.startswith('scan'))])
+    #     print(done_scans)
+    # else:
+    #     done_scans={}
     # scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan')) and (i+'.h5' not in done_scans)]
     # scans = natsorted(scans)
-    scans = ['data'] ################ remove while running
-    # data_type = scans[0].split('.')[-1]
-    data_type = 'dcm'
-    print('REMAINING',scans)
+    # scans = ['data'] ################ remove while running
+    # # data_type = scans[0].split('.')[-1]
+    # data_type = 'dcm'
+    # print('REMAINING',scans)
+    if data_dirname.lower().endswith('.h5'):
+        data_type = 'h5'
+        scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+    else:
+        data_type = 'dcm'
+        scans = [data_dirname.split('/')[-1]]
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█")
     for scan_num in pbar:
         pbar.set_description(desc = f'Processing {scan_num}')

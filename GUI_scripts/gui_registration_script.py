@@ -49,10 +49,6 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
             print("Proceeding without Model X translation.")
             MODEL_X_TRANSLATION = None
 
-    # if not os.path.exists(dirname):
-    #     raise FileNotFoundError(f"Directory {dirname} not found")
-    # if not os.path.exists(os.path.join(dirname, scan_num)):
-    #     raise FileNotFoundError(f"Scan {scan_num} not found in {dirname}")
     if data_type=='h5':
         original_data = load_h5_data(dirname,scan_num)
     elif data_type=='dcm':
@@ -185,11 +181,11 @@ def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cell
         data_dirname = data_dirname[:-1]
     # Use provided save_dirname for checking existing files as well
     # check_save_dir = save_dirname if save_dirname else DATA_SAVE_DIR
-    if os.path.exists(save_dirname):
-        done_scans = set([i.removesuffix('.h5') for i in os.listdir(save_dirname) if (i.startswith('scan'))])
-        print(done_scans)
-    else:
-        done_scans={}
+    # if os.path.exists(save_dirname):
+    #     done_scans = set([i.removesuffix('.h5') for i in os.listdir(save_dirname) if (i.startswith('scan'))])
+    #     print(done_scans)
+    # else:
+    #     done_scans={}
     if data_dirname.lower().endswith('.h5'):
         data_type = 'h5'
         scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
