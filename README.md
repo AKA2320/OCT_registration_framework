@@ -1,8 +1,8 @@
-# OCT_registration_framework - feature_gui Branch
+# OCT_registration_framework
 
 ## Overview
 
-This is the README for the **feature_gui branch** of the OCT_registration_framework.
+This project provides a framework for performing registration of OCT volumes.
 
 This project provides a framework for performing registration of OCT volumes, with a focus on providing a user-friendly Graphical User Interface (GUI) for interaction. It aims to correct for distortions and motion artifacts in OCT images, improving their quality and enabling more accurate analysis. The framework utilizes a combination of image processing techniques, deep learning models, and optimization algorithms.
 
@@ -22,7 +22,7 @@ It's highly recommended to create a virtual environment before installing.
 
 1.  **Clone the repository:**
     ```shell
-    git clone --branch feature_gui https://github.com/AKA2320/OCT_registration_framework.git
+    git clone https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
 2.  **Create a virtual environment:**
@@ -60,7 +60,9 @@ You can install the `OCT_registration_framework` package using `pip` or `uv`.
 
 ## Usage
 
-For the `feature_gui` branch, the primary method of interaction is through the graphical interface (`pyside_gui.py`).
+The framework can be used either through the graphical interface or by running the registration script directly.
+
+### Using the GUI
 
 1.  **Prepare your OCT data:**
     *   The framework supports `.h5` and `.dcm` OCT data formats. Ensure your data is accessible.
@@ -71,6 +73,21 @@ For the `feature_gui` branch, the primary method of interaction is through the g
         python pyside_gui.py
         ```
     *   Use the GUI to select your input data directory, specify the output save directory, and choose whether to use the Model X translation.
+
+### Using the Registration Script
+
+1. **Configure datapaths.yaml:**
+   * Edit the `datapaths.yaml` file to specify:
+     - Input data directory
+     - Output save directory
+     - Model paths
+     - Other parameters as needed
+
+2. **Run the registration script:**
+   ```shell
+   python registration_script.py
+   ```
+   The script will use the configurations from datapaths.yaml to perform the registration.
 
 
 ## Key Files
