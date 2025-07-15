@@ -207,6 +207,7 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                 #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
                 raise Exception(e)
                 cross_section = 0
+            '''
             enface_shape = data[:,0,:].shape[1]
             enface_wraps = []
             if len(enface_extraction_rows)>0:
@@ -232,7 +233,9 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                     enface_wraps.append(temp_enface_shift)
             all_warps = [cross_section,*enface_wraps]
             best_warp = check_multiple_warps(data[i], data[i+1], all_warps)
-            temp_tform_manual = AffineTransform(translation=(-(all_warps[best_warp]),0))
+            '''
+            # temp_tform_manual = AffineTransform(translation=(-(all_warps[best_warp]),0))
+            temp_tform_manual = AffineTransform(translation=(-cross_section,0))
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
             gc.collect()
         except Exception as e:
