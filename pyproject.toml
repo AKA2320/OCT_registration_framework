@@ -22,3 +22,6 @@ dependencies = [
     "tqdm>=4.67.1",
     "ultralytics>=8.3.162",
 ]
+
+[tool.setuptools]
+packages = ["GUI_scripts", "utils"]
