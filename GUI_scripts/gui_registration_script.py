@@ -207,14 +207,7 @@ def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cell
              save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname, 
              expected_cells = expected_cells, expected_surfaces = expected_surfaces) # Pass disable_tqdm here too
 
-@click.command()
-@click.option('--dirname', type=click.Path(), help='File/Directory to load data from')
-@click.option('--use-model-x', is_flag=True, default=False, help='Use Model X for translation correction')
-@click.option('--disable-tqdm', is_flag=True, default=False, help='Disable tqdm progress bars')
-@click.option('--save-dirname', type=click.Path(), default=None, help='Directory to save output data') # Added save-dirname option
-@click.option('--expected-cells', type=int,required=True, default=2, help='Expected Cell patches in the dataset')
-@click.option('--expected-surfaces', type=int, required=True, default=2, help='Expected Surfaces in the dataset')
-def cli(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces):
+def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces):
     # global DATA_LOAD_DIR
     # if dirname:
     #     DATA_LOAD_DIR = dirname
@@ -228,5 +221,6 @@ def cli(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expect
     run_pipeline(dirname = dirname, disable_tqdm=disable_tqdm, use_model_x=use_model_x, 
                  save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces)
 
+
 if __name__ == "__main__":
-    cli()
+    gui_input()
