@@ -8,8 +8,7 @@ import h5py
 from natsort import natsorted
 from scipy.fftpack import fft2, fftshift, ifft2, fft, ifft
 from skimage.filters import threshold_otsu
-from skimage.metrics import normalized_mutual_information as nmi
-from tifffile import imread as tiffread
+# from skimage.metrics import normalized_mutual_information as nmi
 from scipy.signal import correlate2d
 
 
