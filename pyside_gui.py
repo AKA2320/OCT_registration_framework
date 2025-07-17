@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QProcess, QThread, Signal
 import napari
 from utils.util_funcs import GUI_load_h5, GUI_load_dcm
+from GUI_scripts.gui_registration_script import gui_input
 
 # Main Application Window
 class PathLoaderApp(QWidget):
@@ -339,26 +340,18 @@ class RegistrationThread(QThread):
         self.process = None
 
     def run(self):
-        self.process = QProcess()
-        self.process.readyReadStandardOutput.connect(self.handle_stdout)
-        self.process.readyReadStandardError.connect(self.handle_stderr)
-        self.process.errorOccurred.connect(self.process_error)
-        self.process.finished.connect(self.handle_process_finished)
-
         try:
-            command_args = [sys.executable, "-m", self.script_path, "--dirname"
-                            , self.directory_path, "--save-dirname", self.save_directory_path,
-                            "--expected-cells", str(self.expected_cells),"--expected-surfaces", str(self.expected_surfaces)]
-            if self.use_model_x:
-                command_args.append("--use-model-x")
-            if self.disable_tqdm:
-                command_args.append("--disable-tqdm")
-
-            self.process.start(command_args[0], command_args[1:])
-            self.process.waitForFinished(-1)  # -1 means wait indefinitely
-
+            gui_input(
+                dirname=self.directory_path,
+                use_model_x=self.use_model_x,
+                disable_tqdm=self.disable_tqdm,
+                save_dirname=self.save_directory_path,
+                expected_cells=self.expected_cells,
+                expected_surfaces=self.expected_surfaces
+            )
+            self.registration_finished.emit(0)
         except Exception as e:
-            self.error_ready.emit(f"Error starting registration process: {e}")
+            self.error_ready.emit(f"Error in registration process: {e}")
             self.process_error_occurred.emit(QProcess.ProcessError.FailedToStart)
 
     def handle_stdout(self):
