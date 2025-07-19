@@ -1,20 +1,26 @@
-import matplotlib.pylab as plt
+# import matplotlib.pylab as plt
 import numpy as np
 import os
-from skimage.transform import warp, AffineTransform, pyramid_expand, pyramid_reduce
-from natsort import natsorted
+from skimage.transform import warp, AffineTransform
+# from natsort import natsorted
 from tqdm import tqdm
-from tqdm.utils import envwrap
+# from tqdm.utils import envwrap
 import h5py
 from ultralytics import YOLO
 from utils.reg_util_funcs import *
 from utils.util_funcs import *
 import yaml
 import torch
-import click
+import sys
+# import click
 
-with open('datapaths.yaml', 'r') as f:
-    config = yaml.safe_load(f)
+try:
+    with open('datapaths.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+except:
+    with open(f'{os.path.join(os.path.dirname(sys.executable), '_internal')}/datapaths.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+        
 
 MODEL_FEATURE_DETECT = YOLO(config['PATHS']['MODEL_FEATURE_DETECT_PATH'])
 # USE_MODEL_X = config['PATHS']['USE_MODEL_X'] # This will now come from command line
@@ -28,7 +34,7 @@ CELLS_X_PAD = 5
 # EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 
 
-def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_model_x, save_dirname, expected_cells, expected_surfaces):
+def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_model_x, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
     global MODEL_FEATURE_DETECT
     global MODEL_X_TRANSLATION
     global EXPECTED_SURFACES
@@ -86,38 +92,57 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         partition_coord = None
 
     # FLATTENING PART
-    print('Staring FLattening')
+    print('Starting Flattening')
     pbar.set_description(desc = f'Flattening {scan_num}.....')
-    # print('SURFACE COORDS:',surface_coords)
     static_flat = np.argmax(np.sum(cropped_original_data[:,surface_coords[0,0]:surface_coords[0,1],:],axis=(0,1)))
     top_surf = True
     if surface_coords.shape[0]>1:
         for _ in range(2):
+            if cancellation_flag and cancellation_flag():
+                print("Registration cancelled during flattening")
+                return None
             if top_surf:
                 cropped_original_data = flatten_data(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
             else:
                 cropped_original_data = flatten_data(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
             top_surf = False
     else:
+        if cancellation_flag and cancellation_flag():
+            print("Registration cancelled during flattening")
+            return None
         cropped_original_data = flatten_data(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
     # Y-MOTION PART
-    print('Staring Y-motion')
+    if cancellation_flag and cancellation_flag():
+        print("Registration cancelled before Y-motion correction")
+        return None
+        
+    print('Starting Y-motion')
     pbar.set_description(desc = f'Correcting {scan_num} Y-Motion.....')
     top_surf = True
     if surface_coords.shape[0]>1:
         for _ in range(2):
+            if cancellation_flag and cancellation_flag():
+                print("Registration cancelled during Y-motion correction")
+                return None
             if top_surf:
                 cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[:-1],top_surf,partition_coord,disable_tqdm,scan_num)
             else:
                 cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords[-1:],top_surf,partition_coord,disable_tqdm,scan_num)
             top_surf = False
     else:
+        if cancellation_flag and cancellation_flag():
+            print("Registration cancelled during Y-motion correction")
+            return None
         cropped_original_data = y_motion_correcting(cropped_original_data,surface_coords,top_surf,partition_coord,disable_tqdm,scan_num)
 
 
     # X-MOTION PART
-    print('Staring X-motion')
+    if cancellation_flag and cancellation_flag():
+        print("Registration cancelled before X-motion correction")
+        return None
+        
+    print('Starting X-motion')
     pbar.set_description(desc = f'Correcting {scan_num} X-Motion.....')
     test_detect_img = preprocess_img(cropped_original_data[:,:,static_flat])
     res_surface = MODEL_FEATURE_DETECT.predict(test_detect_img,iou = 0.5, save = False, verbose=False,classes = 0, device='cpu',agnostic_nms = True, augment = True)
@@ -163,19 +188,31 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
     for i in tqdm(range(1,cropped_original_data.shape[0],2),desc='X-motion warping',disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
         cropped_original_data[i]  = warp(cropped_original_data[i],AffineTransform(matrix=tr_all[i]),order=3)
 
+    if cancellation_flag and cancellation_flag():
+        print("Registration cancelled before saving data")
+        return None
+        
     pbar.set_description(desc = 'Saving Data.....')
     if cropped_original_data.dtype != np.float64:
         cropped_original_data = cropped_original_data.astype(np.float64)
-    # folder_save = save_dirname
     os.makedirs(save_dirname,exist_ok=True)
     if not save_dirname.endswith('/'):
         save_dirname = save_dirname + '/'
     hdf5_filename = f'{save_dirname}{scan_num}.h5'
-    with h5py.File(hdf5_filename, 'w') as hf:
-        hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
+    try:
+        with h5py.File(hdf5_filename, 'w') as hf:
+            hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
+    except Exception as e:
+        if cancellation_flag and cancellation_flag():
+            print("Registration cancelled during file save")
+            try:
+                os.remove(hdf5_filename)
+            except:
+                pass
+            return None
+        raise e
 
-
-def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces):
+def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
     data_dirname = dirname
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
@@ -201,25 +238,38 @@ def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cell
  
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable=disable_tqdm)
     for scan_num in pbar:
+        if cancellation_flag and cancellation_flag():
+            print("Registration cancelled by user")
+            return
         pbar.set_description(desc = f'Processing {scan_num}')
-        # Pass use_model_x and save_dirname to the main function
-        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = disable_tqdm, 
-             save_detections = False, use_model_x=use_model_x, save_dirname=save_dirname, 
-             expected_cells = expected_cells, expected_surfaces = expected_surfaces) # Pass disable_tqdm here too
+        main(
+            data_dirname, scan_num, pbar, data_type,
+            disable_tqdm=disable_tqdm,
+            save_detections=False,
+            use_model_x=use_model_x,
+            save_dirname=save_dirname,
+            expected_cells=expected_cells,
+            expected_surfaces=expected_surfaces,
+            cancellation_flag=cancellation_flag
+        )
 
-def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces):
-    # global DATA_LOAD_DIR
-    # if dirname:
-    #     DATA_LOAD_DIR = dirname
+def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
     print(f"Data Load Directory: {dirname}")
     print(f"Use Model X: {use_model_x}")
     print(f"Disable Tqdm: {disable_tqdm}")
     print(f"Expected Cells: {expected_cells}")
     print(f"Expected Surfaces: {expected_surfaces}")
-    print(f"Save Data Directory: {save_dirname}") # Print the save directory
-    # Pass all arguments to run_pipeline
-    run_pipeline(dirname = dirname, disable_tqdm=disable_tqdm, use_model_x=use_model_x, 
-                 save_dirname=save_dirname, expected_cells = expected_cells, expected_surfaces = expected_surfaces)
+    print(f"Save Data Directory: {save_dirname}")
+    
+    run_pipeline(
+        dirname=dirname,
+        disable_tqdm=disable_tqdm,
+        use_model_x=use_model_x,
+        save_dirname=save_dirname,
+        expected_cells=expected_cells,
+        expected_surfaces=expected_surfaces,
+        cancellation_flag=cancellation_flag
+    )
 
 
 if __name__ == "__main__":
