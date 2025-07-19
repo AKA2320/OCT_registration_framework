@@ -1,5 +1,5 @@
 import gc
-from pydicom import dcmread
+# from pydicom import dcmread
 from skimage.transform import warp, AffineTransform
 from tqdm import tqdm
 import numpy as np
@@ -7,7 +7,7 @@ from utils.util_funcs import *
 from collections import defaultdict
 from scipy.optimize import minimize as minz
 from scipy import ndimage as scp
-import h5py
+# import h5py
 import torch
 from torchvision import transforms
 import torch.nn.functional as F

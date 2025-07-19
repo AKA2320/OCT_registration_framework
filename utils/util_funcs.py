@@ -2,12 +2,12 @@ from pydicom import dcmread
 # import matplotlib.pylab as plt
 import numpy as np
 import os
-from skimage.transform import warp, AffineTransform
-import cv2
+# from skimage.transform import warp, AffineTransform
+# import cv2
 import h5py
 from natsort import natsorted
-from scipy.fftpack import fft2, fftshift, ifft2, fft, ifft
-from skimage.filters import threshold_otsu
+# from scipy.fftpack import fft2, fftshift, ifft2, fft, ifft
+# from skimage.filters import threshold_otsu
 # from skimage.metrics import normalized_mutual_information as nmi
 from scipy.signal import correlate2d
 
@@ -103,7 +103,7 @@ def min_max(data1, global_min=None, global_max=None):
 #     return transforms_all
 
 '''
-
+'''
 def bottom_extract(data,mid):
     test = np.max(data.transpose(2,1,0),axis=0).copy()
     kk = fftshift(fft2(test[-(data[0].shape[0]-mid):-80]))
@@ -149,18 +149,19 @@ def denoise_signal(errs , rows = 10):
     kk[rows:] = 0
     kk = abs(ifft(kk))
     return kk
-
+'''
 def non_zero_crop(a,b):
     mini = max(np.min(np.where(a[0]!=0)),np.min(np.where(b[0]!=0)))
     maxi = min(np.max(np.where(a[0]!=0)),np.max(np.where(b[0]!=0)))
     return mini, maxi
 
+'''
 def denoise_signal1D_err_calc(errs , rows = 20):
     kk = fft(errs)
     kk[rows:] = 0
     kk = abs(ifft(kk))
     return kk
-
+'''
 def preprocess_img(data):
     data = data.transpose(1,0)
     data = min_max(data)
