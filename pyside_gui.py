@@ -317,9 +317,12 @@ class PathLoaderApp(QWidget):
 
     def cancel_registration(self):
         if self.registration_thread and self.registration_thread.isRunning():
-            self.status_label_load.setText("Terminating registration process...")
-            self.output_log.append("User requested termination. Terminating process...")
+            self.status_label_load.setText("Cancelling registration process...")
+            self.output_log.append("User requested cancellation. Cancelling process...")
             self.registration_thread.terminate_process()
+            self.register_btn.setEnabled(True)
+            self.browse_dir_btn.setEnabled(True)
+            self.cancel_register_btn.setEnabled(False)
 
 # Registration Worker Thread
 class RegistrationThread(QThread):
@@ -327,6 +330,7 @@ class RegistrationThread(QThread):
     error_ready = Signal(str)
     process_error_occurred = Signal(QProcess.ProcessError)
     registration_finished = Signal(int)
+    registration_cancelled = Signal()
 
     def __init__(self, directory_path, save_directory_path, script_path, use_model_x, disable_tqdm, expected_cells, expected_surfaces):
         super().__init__()
@@ -335,9 +339,10 @@ class RegistrationThread(QThread):
         self.script_path = script_path
         self.use_model_x = use_model_x
         self.disable_tqdm = disable_tqdm
-        self.expected_cells = expected_cells     # Store new parameter
-        self.expected_surfaces = expected_surfaces # Store new parameter
+        self.expected_cells = expected_cells
+        self.expected_surfaces = expected_surfaces
         self.process = None
+        self._cancellation_flag = False
 
     def run(self):
         try:
@@ -347,9 +352,13 @@ class RegistrationThread(QThread):
                 disable_tqdm=self.disable_tqdm,
                 save_dirname=self.save_directory_path,
                 expected_cells=self.expected_cells,
-                expected_surfaces=self.expected_surfaces
+                expected_surfaces=self.expected_surfaces,
+                cancellation_flag=lambda: self._cancellation_flag
             )
-            self.registration_finished.emit(0)
+            if self._cancellation_flag:
+                self.registration_cancelled.emit()
+            else:
+                self.registration_finished.emit(0)
         except Exception as e:
             self.error_ready.emit(f"Error in registration process: {e}")
             self.process_error_occurred.emit(QProcess.ProcessError.FailedToStart)
@@ -368,11 +377,8 @@ class RegistrationThread(QThread):
         self.process_error_occurred.emit(error_enum)
 
     def terminate_process(self):
-        if self.process and self.process.state() == QProcess.ProcessState.Running:
-            self.process.terminate()
-            self.wait(5000)
-            if self.process and self.process.state() == QProcess.ProcessState.Running:
-                self.process.kill()
+        self._cancellation_flag = True
+        self.registration_cancelled.emit()
 
     def handle_process_finished(self):
         self.registration_finished.emit(self.process.exitCode())
