@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QProcess, QThread, Signal
 import napari
+import multiprocessing
 from utils.util_funcs import GUI_load_h5, GUI_load_dcm
 from GUI_scripts.gui_registration_script import gui_input
 
@@ -279,7 +280,8 @@ class PathLoaderApp(QWidget):
             QMessageBox.critical(self, "Input Error", "Expected Cells and Expected Surfaces must be valid integers.")
             return
 
-        registration_script = "GUI_scripts.gui_registration_script"
+        # registration_script = "GUI_scripts.gui_registration_script"
+        registration_script = ""
 
         self.output_log.clear()
         self.status_label_load.setText(f"Registration process initiated for: {os.path.basename(path_to_register)}...")
@@ -336,7 +338,7 @@ class RegistrationThread(QThread):
         super().__init__()
         self.directory_path = directory_path
         self.save_directory_path = save_directory_path
-        self.script_path = script_path
+        # self.script_path = script_path
         self.use_model_x = use_model_x
         self.disable_tqdm = disable_tqdm
         self.expected_cells = expected_cells
@@ -384,6 +386,7 @@ class RegistrationThread(QThread):
         self.registration_finished.emit(self.process.exitCode())
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     window = PathLoaderApp()
     window.show()
