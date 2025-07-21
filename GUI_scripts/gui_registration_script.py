@@ -272,5 +272,5 @@ def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, 
     )
 
 
-if __name__ == "__main__":
-    gui_input()
+# if __name__ == "__main__":
+#     gui_input()
