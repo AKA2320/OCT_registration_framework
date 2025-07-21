@@ -53,7 +53,7 @@ class PathLoaderApp(QWidget):
 
         self.path_display_load = QLineEdit("No file/directory selected for loading")
         self.path_display_load.setReadOnly(True)
-        self.path_display_load.setStyleSheet("color: #777; font-style: italic;")
+        self.path_display_load.setStyleSheet("background-color: white; color: black; font-style: italic;")
         self.load_layout.addWidget(self.path_display_load)
 
         self.visualize_checkbox = QCheckBox("Visualize with napari")
@@ -86,7 +86,7 @@ class PathLoaderApp(QWidget):
 
         self.registration_path_display = QLineEdit("No directory selected for registration")
         self.registration_path_display.setReadOnly(True)
-        self.registration_path_display.setStyleSheet("color: #777; font-style: italic;")
+        self.registration_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
         self.register_layout.addWidget(self.registration_path_display)
 
         # Add Save Directory selection
@@ -97,19 +97,21 @@ class PathLoaderApp(QWidget):
         self.save_path_display = QLineEdit("output/") 
         self.selected_save_path = "output/"
         self.save_path_display.setReadOnly(True)
-        self.save_path_display.setStyleSheet("color: #777; font-style: italic;")
+        self.save_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
         self.register_layout.addWidget(self.save_path_display)
 
         # New: EXPECTED_CELLS input
         self.register_layout.addWidget(QLabel("Expected Cells (int, default: 2):"))
         self.expected_cells_input = QLineEdit("2") # Default value 2
         self.expected_cells_input.setValidator(QIntValidator()) # Only allow integer input
+        self.expected_cells_input.setStyleSheet("background-color: white; color: black;")
         self.register_layout.addWidget(self.expected_cells_input)
 
         # New: EXPECTED_SURFACES input
         self.register_layout.addWidget(QLabel("Expected Surfaces (int, default: 2):"))
         self.expected_surfaces_input = QLineEdit("2") # Default value 2
         self.expected_surfaces_input.setValidator(QIntValidator()) # Only allow integer input
+        self.expected_surfaces_input.setStyleSheet("background-color: white; color: black;")
         self.register_layout.addWidget(self.expected_surfaces_input)
 
         self.use_model_x_checkbox = QCheckBox("USE_MODEL_X")
@@ -136,7 +138,7 @@ class PathLoaderApp(QWidget):
         self.output_log = QTextEdit()
         self.output_log.setReadOnly(True)
         self.output_log.setPlaceholderText("Script output will appear here...")
-        self.output_log.setStyleSheet("background-color: black; color: white; border: 1px solid #ccc; padding: 5px;")
+        self.output_log.setStyleSheet("background-color: white; color: black; border: 1px solid #ccc; padding: 5px;")
         self.register_layout.addWidget(self.output_log)
         self.register_layout.addStretch()
 
@@ -176,7 +178,7 @@ class PathLoaderApp(QWidget):
     def update_load_path(self, path):
         self.selected_load_path = path
         self.path_display_load.setText(path)
-        self.path_display_load.setStyleSheet("color: #fff; font-style: normal;")
+        self.path_display_load.setStyleSheet("background-color: white; color: black; font-style: normal;")
         self.status_label_load.setText("Path selected for loading. Ready to load.")
         self.load_btn.setEnabled(True)
 
@@ -200,7 +202,7 @@ class PathLoaderApp(QWidget):
 
         self.selected_register_path = dir_path
         self.registration_path_display.setText(dir_path)
-        self.registration_path_display.setStyleSheet("color: #fff; font-style: normal;")
+        self.registration_path_display.setStyleSheet("background-color: white; color: black; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
@@ -219,7 +221,7 @@ class PathLoaderApp(QWidget):
 
         self.selected_save_path = dir_path
         self.save_path_display.setText(dir_path)
-        self.save_path_display.setStyleSheet("color: #fff; font-style: normal;")
+        self.save_path_display.setStyleSheet("background-color: white; color: black; font-style: normal;")
         if self.selected_register_path and self.selected_save_path:
             self.register_btn.setEnabled(True)
         else:
