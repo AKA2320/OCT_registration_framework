@@ -212,30 +212,17 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
             return None
         raise e
 
-def run_pipeline(dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
-    data_dirname = dirname
+def run_pipeline(data_dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
-    # Use provided save_dirname for checking existing files as well
-    # check_save_dir = save_dirname if save_dirname else DATA_SAVE_DIR
-    # if os.path.exists(save_dirname):
-    #     done_scans = set([i.removesuffix('.h5') for i in os.listdir(save_dirname) if (i.startswith('scan'))])
-    #     print(done_scans)
-    # else:
-    #     done_scans={}
+
     if data_dirname.lower().endswith('.h5'):
         data_type = 'h5'
         scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
     else:
         data_type = 'dcm'
         scans = [data_dirname.split('/')[-1]]
-    # scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan')) and (i+'.h5' not in done_scans)]
-    # scans = natsorted(scans)
-    # scans = ['data'] ################ remove while running
-    # data_type = scans[0].split('.')[-1]
-    # data_type = 'dcm'
-    # print('REMAINING',scans)
- 
+
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable=disable_tqdm)
     for scan_num in pbar:
         if cancellation_flag and cancellation_flag():
@@ -271,6 +258,3 @@ def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, 
         cancellation_flag=cancellation_flag
     )
 
-
-# if __name__ == "__main__":
-#     gui_input()
