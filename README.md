@@ -1,111 +1,137 @@
-# OCT_registration_framework
+# OCT Registration Framework
 
 ## Overview
 
-This project provides a framework for performing registration of OCT volumes.
-
-This project provides a framework for performing registration of OCT volumes, with a focus on providing a user-friendly Graphical User Interface (GUI) for interaction. It aims to correct for distortions and motion artifacts in OCT images, improving their quality and enabling more accurate analysis. The framework utilizes a combination of image processing techniques, deep learning models, and optimization algorithms.
+This project provides a comprehensive framework for performing registration of Optical Coherence Tomography (OCT) volumes. The framework focuses on providing both a user-friendly Graphical User Interface (GUI) and command-line tools for batch processing. It aims to correct for distortions and motion artifacts in OCT images, improving their quality and enabling more accurate analysis through advanced image processing techniques, deep learning models, and optimization algorithms.
 
 ## Key Features
 
-*   **Feature Detection:** Employs a YOLO model for detecting anatomical features in OCT images.
-*   **Motion Correction:** Corrects for motion artifacts in the X, Y, and Z (flattening) directions.
-*   **Deep Learning Integration:** Integrates deep learning models, such as a Swin Transformer-based "TransMorph" model, for advanced registration tasks.
-*   **Configuration-Driven:** Uses YAML configuration files for easy customization of parameters and file paths.
-
+*   **Feature Detection:** Employs state-of-the-art YOLO models for detecting anatomical features and structures in OCT images
+*   **Multi-dimensional Motion Correction:** Corrects for motion artifacts in X, Y, and Z (flattening) directions
+*   **Deep Learning Integration:** Utilizes Swin Transformer-based "TransMorph" models for advanced registration tasks
+*   **Flexible Configuration:** Uses YAML configuration files for easy customization of parameters and file paths
+*   **Dual Interface:** Provides both GUI (PySide6) and command-line interfaces for different use cases
+*   **Multi-format Support:** Supports `.h5` and `.dcm` OCT data formats
+*   **Batch Processing:** Includes multiprocessing capabilities for handling large datasets efficiently
 
 ## Installation
 
-**Note:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
+**Prerequisites:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
 
-It's highly recommended to create a virtual environment before installing.
+### Quick Setup
 
 1.  **Clone the repository:**
     ```shell
     git clone https://github.com/AKA2320/OCT_registration_framework.git
     cd OCT_registration_framework
     ```
-2.  **Create a virtual environment:**
+
+2.  **Create and activate a virtual environment:**
     ```shell
     python3.12 -m venv .venv
-    ```
-3.  **Activate the virtual environment:**
-    ```shell
-    source .venv/bin/activate # On Linux/macOS
-    # .venv\Scripts\activate # On Windows
+    source .venv/bin/activate  # On Linux/macOS
+    # .venv\Scripts\activate   # On Windows
     ```
 
-
-**Install the package:**
-You can install the `OCT_registration_framework` package using `pip` or `uv`.
-
-*   **Using pip:**
+3.  **Install the package:**
+    
+    **Option A: Using pip (standard)**
     ```shell
     pip install .
     ```
-*   **Using uv (faster than pip):**
+    
+    **Option B: Using uv (faster, recommended)**
     ```shell
     pip install uv
     uv pip install .
     ```
-
-**Using uv with lock file (recommended for reproducible environments):**
-
-1.  **Install uv:**
     * Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
-2.  **Run uv sync:**
+
+    **Option C: Using uv with lock file (most reproducible)**
     ```shell
     uv sync
     ```
 
 ## Usage
 
-The framework can be used either through the graphical interface or by running the registration script directly.
+The framework can be used through multiple interfaces depending on your needs:
 
-### Using the GUI
+### Using the GUI (Recommended for Interactive Use)
 
 1.  **Prepare your OCT data:**
-    *   The framework supports `.h5` and `.dcm` OCT data formats. Ensure your data is accessible.
+    *   Ensure your `.h5` or `.dcm` files are organized in accessible directories
 
-2.  **Run the GUI:**
-    *   After installing the package and activating your virtual environment, run the GUI script:
-        ```shell
-        python pyside_gui.py
-        ```
-    *   Use the GUI to select your input data directory, specify the output save directory, and choose whether to use the Model X translation.
+2.  **Launch the GUI:**
+    ```shell
+    python pyside_gui.py
+    ```
 
-### Using the Registration Script
+3.  **Configure through the interface:**
+    *   Select input data directory
+    *   Specify output save directory
+    *   Choose model parameters and processing options
+    *   Monitor progress through the built-in interface
 
+### Using Command-Line Scripts
+
+#### Standard Registration Script
 1. **Configure datapaths.yaml:**
-   * Edit the `datapaths.yaml` file to specify:
-     - Input data directory
-     - Output save directory
-     - Model paths
-     - Other parameters as needed
+   Edit `datapaths.yaml` to specify:
+   - Input data directory (`DATA_LOAD_DIR`)
+   - Output save directory (`DATA_SAVE_DIR`)
+   - Model paths for feature detection and translation
+   - Processing parameters (`USE_MODEL_X`, `EXPECTED_SURFACES`, `EXPECTED_CELLS`)
 
-2. **Run the registration script:**
+2. **Run the registration:**
    ```shell
    python registration_script.py
    ```
-   The script will use the configurations from datapaths.yaml to perform the registration.
 
+#### Multiprocessing Registration (for large datasets)
+```shell
+python registration_endo_multiproc.py
+```
 
-## Key Files
+## Configuration
 
-*   `pyside_gui.py`: The main PySide6 GUI application.
-*   `registration_script.py`: The backend script for performing OCT volume registration (typically run via the GUI).
-*   `GUI_scripts/gui_reg_util_funcs.py`: Utility functions specific to the GUI registration process.
-*   `GUI_scripts/gui_util_funcs.py`: General utility functions for the GUI.
-*   `funcs_transmorph.py`: Contains the implementation of the "TransMorph" model.
-*   `utils/reg_util_funcs.py`: Provides utility functions for registration, including motion correction, flattening, and feature detection.
-*   `datapaths.yaml`: Configuration file for specifying file paths and other parameters. This file contains default paths and configurations for models and other parameters, some of which can be overridden by the GUI.
-*   `pyproject.toml`: Project configuration and dependencies.
-*   `uv.lock`: Reproduce exact environment using UV.
+The framework uses `datapaths.yaml` for configuration:
 
-## Models
+```yaml
+PATHS:
+  DATA_LOAD_DIR: '/path/to/your/oct/data'
+  DATA_SAVE_DIR: 'output_directory/'
+  MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
+  MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt'
+  USE_MODEL_X: True
+  EXPECTED_SURFACES: 3
+  EXPECTED_CELLS: 3
+```
 
-The `models/` directory contains the pre-trained models used by the framework:
+## Core Components
 
-*   `feature_detect_yolov12best.pt`: YOLO model for feature detection.
-*   `model_transmorph_LRNPOSEMBD_Large_x_translation.pt`: "TransMorph" model for X-motion correction.
-*   `model_transmorph_x_translation.pt`: Another "TransMorph" model variant.
+### Main Scripts
+- **`pyside_gui.py`**: PySide6-based GUI application providing interactive registration workflow
+- **`registration_script.py`**: Core registration backend for command-line usage
+- **`registration_endo_multiproc.py`**: Multiprocessing-enabled registration for batch processing (Under Development)
+
+### Key Modules
+- **`utils/reg_util_funcs.py`**: Core registration utilities including motion correction, flattening, and feature detection
+- **`utils/util_funcs.py`**: General-purpose utility functions for data handling and processing
+- **`GUI_scripts/gui_registration_script.py`**: GUI-specific registration workflow management
+- **`funcs_transmorph.py`**: TransMorph model implementation and integration
+- **`config_transmorph.py`**: TransMorph model configuration parameters
+
+### Models
+The `models/` directory contains pre-trained models:
+
+- **`feature_detect_yolov12best.pt`**: YOLO-based model for anatomical feature detection in OCT images
+- **`model_transmorph_LRNPOSEMBD_Large_x_translation.pt`**: Advanced TransMorph model for X-axis motion correction using Swin Transformer architecture
+
+## Dependencies
+
+Key dependencies (see `pyproject.toml` for complete list):
+- **Deep Learning**: PyTorch
+- **Image Processing**: scikit-image, OpenCV
+- **GUI**: PySide6, Napari (for visualization)
+- **Data Handling**: h5py, pydicom, numpy, dask
+
