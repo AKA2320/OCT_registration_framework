@@ -1,12 +1,10 @@
 [project]
-name = "oct-registration-framework"
+name = "oct-reg"
 version = "0.1.0"
-description = "Add your description here"
+description = "OCT Registration Framework package"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "bokeh>=3.7.3",
-    "dask>=2025.5.1",
     "h5py>=3.14.0",
     "matplotlib>=3.10.3",
     "ml-collections>=1.1.0",
@@ -21,6 +19,12 @@ dependencies = [
     "torchvision>=0.22.1",
     "tqdm>=4.67.1",
     "ultralytics>=8.3.162",
+]
+
+[project.optional-dependencies]
+multiproc = [
+    "dask>=2025.5.1",
+    "dask-jobqueue>=0.9.0",
 ]
 
 [tool.setuptools]

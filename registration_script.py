@@ -1,4 +1,5 @@
 
+import sys
 import matplotlib.pylab as plt
 import numpy as np
 import os
@@ -28,6 +29,7 @@ EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
 EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
 BATCH_FLAG = config['PATHS']['BATCH_FLAG']
 DISABLE_TQDM = config['PATHS']['DISABLE_TQDM']
+ENABLE_MULTIPROC_SLURM = config['PATHS']['ENABLE_MULTIPROC_SLURM']
 
 if USE_MODEL_X:
     try:
@@ -166,6 +168,28 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     with h5py.File(hdf5_filename, 'w') as hf:
         hf.create_dataset('volume', data=cropped_original_data, compression='gzip',compression_opts=5)
 
+def init_worker():
+    global MODEL_FEATURE_DETECT
+    global MODEL_X_TRANSLATION
+    
+    with open('datapaths.yaml', 'r') as f:
+        config = yaml.safe_load(f)
+    
+    MODEL_FEATURE_DETECT = YOLO(config['PATHS']['MODEL_FEATURE_DETECT_PATH'])
+    
+    if config['PATHS']['USE_MODEL_X']:
+        try:
+            DEVICE = 'cpu'
+            MODEL_X_TRANSLATION = torch.load(config['PATHS']['MODEL_X_TRANSLATION_PATH'], 
+                                           map_location=DEVICE, weights_only=False)
+            MODEL_X_TRANSLATION.eval()
+            print("Model X loaded successfully on worker")
+        except Exception as e:
+            print(f"Error loading Model X on worker: {e}")
+            print("Proceeding without Model X translation on worker")
+            MODEL_X_TRANSLATION = None
+    else:
+        MODEL_X_TRANSLATION = None
 
 if __name__ == "__main__":
     data_dirname = DATA_LOAD_DIR
@@ -184,8 +208,51 @@ if __name__ == "__main__":
         data_type = 'h5'
 
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█")
-    disable_tqdm = DISABLE_TQDM
-    save_detections = False
-    for scan_num in pbar:
-        pbar.set_description(desc = f'Processing {scan_num}')
-        main(data_dirname, scan_num, pbar, data_type, disable_tqdm, save_detections)
+    if not ENABLE_MULTIPROC_SLURM:
+        disable_tqdm = DISABLE_TQDM
+        save_detections = False
+        for scan_num in pbar:
+            pbar.set_description(desc = f'Processing {scan_num}')
+            main(data_dirname, scan_num, pbar, data_type, disable_tqdm, save_detections)
+
+    elif ENABLE_MULTIPROC_SLURM:
+        try:
+            from dask_jobqueue import SLURMCluster
+            from dask.distributed import Client, progress
+            from dask import delayed, compute
+        except:
+            raise ImportError("Dask and dask_jobqueue modules are required for multiprocessing with SLURM") from e
+
+        disable_tqdm = True # Has to be True for multiprocessing
+        save_detections = False
+        multiproc_args_list = [(data_dirname, scan_num, pbar, data_type, disable_tqdm, save_detections) for scan_num in scans]
+        print("Setting up Dask SLURM cluster...")
+        cluster = SLURMCluster(
+            queue='general',
+            account='r00970',
+            cores=1, 
+            processes=1,
+            memory='7GB',
+            walltime='01:00:00',
+            job_extra_directives=[
+                "--cpus-per-task=1",
+                "--nodes=1",
+                "--job-name=my_job",
+                "--output=my_job.out",
+                "--error=my_job.err"
+            ],
+            python=sys.executable,
+        )
+        cluster.scale(jobs=len(scans))
+        # Attach client
+        client = Client(cluster)
+        print(client)
+        client.run(init_worker)
+        tasks = [delayed(main)(args) for args in multiproc_args_list]
+        print(client.dashboard_link)
+        print("Submitting tasks to the cluster...")
+        results = compute(*tasks)
+        results = client.gather(results)
+        # results = compute(*tasks)
+        client.close()
+        cluster.close()
