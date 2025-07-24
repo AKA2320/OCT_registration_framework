@@ -26,6 +26,8 @@ DATA_LOAD_DIR = config['PATHS']['DATA_LOAD_DIR']
 DATA_SAVE_DIR = config['PATHS']['DATA_SAVE_DIR']
 EXPECTED_SURFACES = config['PATHS']['EXPECTED_SURFACES']
 EXPECTED_CELLS = config['PATHS']['EXPECTED_CELLS']
+BATCH_FLAG = config['PATHS']['BATCH_FLAG']
+DISABLE_TQDM = config['PATHS']['DISABLE_TQDM']
 
 if USE_MODEL_X:
     try:
@@ -52,6 +54,8 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
             raise FileNotFoundError(f"Directory {dirname} not found")
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
+    print(original_data.shape)
+
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
@@ -167,24 +171,21 @@ if __name__ == "__main__":
     data_dirname = DATA_LOAD_DIR
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
-    # if os.path.exists(DATA_SAVE_DIR):
-    #     done_scans = set([i.removesuffix('.h5') for i in os.listdir(DATA_SAVE_DIR) if (i.startswith('scan'))])
-    #     print(done_scans)
-    # else:
-    #     done_scans={}
-    # scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan')) and (i+'.h5' not in done_scans)]
-    # scans = natsorted(scans)
-    # scans = ['data'] ################ remove while running
-    # # data_type = scans[0].split('.')[-1]
-    # data_type = 'dcm'
-    # print('REMAINING',scans)
-    if data_dirname.lower().endswith('.h5'):
-        data_type = 'h5'
-        scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+    if not BATCH_FLAG:
+        if data_dirname.lower().endswith('.h5'):
+            data_type = 'h5'
+            scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+        else:
+            data_type = 'dcm'
+            scans = [data_dirname.split('/')[-1]]
     else:
-        data_type = 'dcm'
-        scans = [data_dirname.split('/')[-1]]
+        scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan'))]
+        scans = natsorted(scans)
+        data_type = 'h5'
+
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█")
+    disable_tqdm = DISABLE_TQDM
+    save_detections = False
     for scan_num in pbar:
         pbar.set_description(desc = f'Processing {scan_num}')
-        main(data_dirname, scan_num, pbar, data_type, disable_tqdm = False, save_detections = False)
+        main(data_dirname, scan_num, pbar, data_type, disable_tqdm, save_detections)

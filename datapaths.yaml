@@ -1,8 +1,10 @@
 PATHS:
-  DATA_LOAD_DIR: '/Users/akapatil/Documents/OCT/Bifocal registration/pic3_Healthy_8192/data'
-  DATA_SAVE_DIR: 'test_registered/'
+  DATA_LOAD_DIR: '/Users/akapatil/Documents/OCT/Bifocal registration/Hadiya_4_15_2025_1.50_3mm/batch'
+  DATA_SAVE_DIR: 'output/'
   MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
   MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt'
   USE_MODEL_X: True
   EXPECTED_SURFACES: 3
   EXPECTED_CELLS: 3
+  BATCH_FLAG: True
+  DISABLE_TQDM: False
