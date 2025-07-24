@@ -193,11 +193,18 @@ def load_h5_data(dirname, scan_num):
     # with h5py.File(path+pic_paths[0], 'r') as hf:
     #     original_data = hf['volume'][:,100:-100,:].astype(np.float32)
     # return original_data
-    if not dirname.endswith(('.h5','.hdf5')):
-        raise Exception ("Not HDF5 data format")
-    with h5py.File(dirname, 'r') as hf:
-        data = hf['volume'][:,100:-100,:]
-    return data
+    if dirname.endswith(('.h5','.hdf5')):
+        with h5py.File(dirname, 'r') as hf:
+            data = hf['volume'][:,100:-100,:]
+        return data
+    else:
+        if not dirname.endswith('/'):
+            dirname = dirname + '/'
+        path = f'{dirname}{scan_num}/'
+        pic_paths = [i for i in os.listdir(path) if i.endswith('.h5')]
+        with h5py.File(path+pic_paths[0], 'r') as hf:
+            original_data = hf['volume'][:,100:-100,:]
+        return original_data
 
 def load_data_dcm(dirname, scan_num):
     # path = f'{dirname}/{scan_num}/'
@@ -242,12 +249,12 @@ def GUI_load_dcm(path_dir):
     for i,j in enumerate(pic_paths):
         aa = dcmread(path_dir+j)
         imgs_from_folder[i] = aa.pixel_array
-    imgs_from_folder = imgs_from_folder[:,:,:].astype(np.float32)
+    imgs_from_folder = imgs_from_folder[:,:,:]
     return imgs_from_folder
 
 def GUI_load_h5(path_h5):
     if not path_h5.endswith('.h5'):
         raise Exception ("Not HDF5 data format")
     with h5py.File(path_h5, 'r') as hf:
-        original_data = hf['volume'][:,:,:].astype(np.float32)
+        original_data = hf['volume'][:,:,:]
     return original_data
