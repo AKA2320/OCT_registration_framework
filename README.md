@@ -52,6 +52,13 @@ This project provides a comprehensive framework for performing registration of O
     uv sync
     ```
 
+4. **Install optional dependencies (multiprocessing support):**
+    ```shell
+    pip install ".[multiproc]"  # Using pip
+    # or
+    uv pip install ".[multiproc]"  # Using uv (faster)
+    ```
+
 ## Usage
 
 The framework can be used through multiple interfaces depending on your needs:
@@ -87,32 +94,15 @@ The framework can be used through multiple interfaces depending on your needs:
    python registration_script.py
    ```
 
-#### Multiprocessing Registration (for large datasets)
-```shell
-python registration_endo_multiproc.py
-```
-
 ## Configuration
 
 The framework uses `datapaths.yaml` for configuration:
-
-```yaml
-PATHS:
-  DATA_LOAD_DIR: '/path/to/your/oct/data'
-  DATA_SAVE_DIR: 'output_directory/'
-  MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
-  MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt'
-  USE_MODEL_X: True
-  EXPECTED_SURFACES: 3
-  EXPECTED_CELLS: 3
-```
 
 ## Core Components
 
 ### Main Scripts
 - **`pyside_gui.py`**: PySide6-based GUI application providing interactive registration workflow
 - **`registration_script.py`**: Core registration backend for command-line usage
-- **`registration_endo_multiproc.py`**: Multiprocessing-enabled registration for batch processing (Under Development)
 
 ### Key Modules
 - **`utils/reg_util_funcs.py`**: Core registration utilities including motion correction, flattening, and feature detection
@@ -125,7 +115,7 @@ PATHS:
 The `models/` directory contains pre-trained models:
 
 - **`feature_detect_yolov12best.pt`**: YOLO-based model for anatomical feature detection in OCT images
-- **`model_transmorph_LRNPOSEMBD_Large_x_translation.pt`**: Advanced TransMorph model for X-axis motion correction using Swin Transformer architecture
+- **`model_transmorph_LRNPOSEMBD_Large_onlyX_batch32_ncc_normalized_shiftrange3_dynamiccrop_onlyMSE.pt`**: Advanced TransMorph model for X-axis motion correction using Swin Transformer architecture
 
 ## Dependencies
 
@@ -134,4 +124,4 @@ Key dependencies (see `pyproject.toml` for complete list):
 - **Image Processing**: scikit-image, OpenCV
 - **GUI**: PySide6, Napari (for visualization)
 - **Data Handling**: h5py, pydicom, numpy, dask
-
+- **SLURM Multiprocessing**: dask
