@@ -1301,7 +1301,7 @@ wheels = [
 ]
 
 [[package]]
-name = "oct-registration-framework"
+name = "oct-reg"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
