@@ -61,6 +61,7 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
         original_data = load_data_dcm(dirname,scan_num)
     # MODEL_FEATURE_DETECT PART
     print(original_data.shape)
+
     pbar.set_description(desc = f'Loading Model_FEATURE_DETECT for {scan_num}')
     static_flat = np.argmax(np.sum(original_data[:,:,:],axis=(0,1)))
     test_detect_img = preprocess_img(original_data[:,:,static_flat])
@@ -212,16 +213,21 @@ def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, use_
             return None
         raise e
 
-def run_pipeline(data_dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
+def run_pipeline(data_dirname, disable_tqdm, use_model_x, save_dirname, expected_cells, expected_surfaces, batch_data_flag, cancellation_flag=None):
     if data_dirname.endswith('/'):
         data_dirname = data_dirname[:-1]
 
-    if data_dirname.lower().endswith('.h5'):
-        data_type = 'h5'
-        scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+    if not batch_data_flag:
+        if data_dirname.lower().endswith('.h5'):
+            data_type = 'h5'
+            scans = [data_dirname.split('/')[-1].removesuffix('.h5')]
+        else:
+            data_type = 'dcm'
+            scans = [data_dirname.split('/')[-1]]
     else:
-        data_type = 'dcm'
-        scans = [data_dirname.split('/')[-1]]
+        scans = [i for i in os.listdir(data_dirname) if (i.startswith('scan'))]
+        scans = natsorted(scans)
+        data_type = 'h5'
 
     pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable=disable_tqdm)
     for scan_num in pbar:
@@ -240,21 +246,23 @@ def run_pipeline(data_dirname, disable_tqdm, use_model_x, save_dirname, expected
             cancellation_flag=cancellation_flag
         )
 
-def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces, cancellation_flag=None):
+def gui_input(dirname, use_model_x, disable_tqdm, save_dirname, expected_cells, expected_surfaces,batch_data_flag, cancellation_flag=None):
     print(f"Data Load Directory: {dirname}")
     print(f"Use Model X: {use_model_x}")
     print(f"Disable Tqdm: {disable_tqdm}")
     print(f"Expected Cells: {expected_cells}")
     print(f"Expected Surfaces: {expected_surfaces}")
     print(f"Save Data Directory: {save_dirname}")
+    print(f"Batch Data Flag: {batch_data_flag}")
     
     run_pipeline(
-        dirname=dirname,
+        data_dirname=dirname,
         disable_tqdm=disable_tqdm,
         use_model_x=use_model_x,
         save_dirname=save_dirname,
         expected_cells=expected_cells,
         expected_surfaces=expected_surfaces,
+        batch_data_flag = batch_data_flag,
         cancellation_flag=cancellation_flag
     )
 
