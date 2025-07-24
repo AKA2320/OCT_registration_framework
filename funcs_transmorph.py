@@ -19,13 +19,18 @@ import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from timm.layers import DropPath, trunc_normal_, to_3tuple, to_2tuple
-from torch.distributions.normal import Normal
+# from torch.distributions.normal import Normal
 import torch.nn.functional as nnf
 import numpy as np
-import torch
-import torch.nn as nn
 from config_transmorph import *
-
+import torch.nn.functional as F
+import torchvision.transforms.functional as TF
+from torch.utils.data import Dataset
+import cv2
+from skimage.transform import warp
+from skimage.transform import AffineTransform as AFT
+import os
+# from torch.utils.data import DataLoader
 # import models.configs_TransMorph as configs
 
 class Mlp(nn.Module):
@@ -853,9 +858,6 @@ CONFIGS = {
 }
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 class NCCLoss(nn.Module):
     def __init__(self, win_size=9, eps=1e-5):
@@ -896,13 +898,7 @@ class NCCLoss(nn.Module):
         return torch.mean(cc)  # negative because we minimize loss
 
 
-import torch
-from torch.utils.data import Dataset
-import cv2
-from skimage.transform import warp
-from skimage.transform import AffineTransform as AFT
-import os
-from torch.utils.data import DataLoader
+
 
 def shift_crop_image(stat, mov , shifts):
     stat = warp(stat, AFT(translation = shifts),order = 3)
@@ -916,8 +912,6 @@ def shift_crop_image(stat, mov , shifts):
     temp_mov = mov[y_slice, x_slice]
     return temp_stat, temp_mov
 
-import numpy as np
-import torch
 
 class BrightestCenterSquareCrop:
     def __call__(self, image):
@@ -949,8 +943,6 @@ class BrightestCenterSquareCrop:
         cropped = image[:, top:top+crop_size, left:left+crop_size]
         return cropped
 
-import torch
-import torchvision.transforms.functional as TF
 
 class ResizeToMultiple:
     def __init__(self, divisor=8):
