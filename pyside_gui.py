@@ -43,6 +43,7 @@ class PathLoaderApp(QWidget):
         self.tab_widget = QTabWidget()
         overall_layout.addWidget(self.tab_widget)
 
+# ----------------------------------------------------------------------------------------------------------------------------------
         # Tab 1: Data Loading & Visualization
         self.load_tab_widget = QWidget()
         self.load_layout = QVBoxLayout(self.load_tab_widget)
@@ -71,20 +72,21 @@ class PathLoaderApp(QWidget):
         self.load_layout.addStretch()
         self.tab_widget.addTab(self.load_tab_widget, "Load & Visualize")
 
+# ----------------------------------------------------------------------------------------------------------------------------------
         # Tab 2: Data Registration
         self.register_tab_widget = QWidget()
         self.register_layout = QVBoxLayout(self.register_tab_widget)
 
-        self.registration_output_ready.connect(self.append_registration_output)
-        self.registration_error_ready.connect(self.append_registration_output)
-        self.registration_finished.connect(self.process_finished)
-        self.registration_process_error.connect(self.process_error)
+        # self.registration_output_ready.connect(self.append_registration_output)
+        # self.registration_error_ready.connect(self.append_registration_output)
+        # self.registration_finished.connect(self.process_finished)
+        # self.registration_process_error.connect(self.process_error)
 
-        self.register_layout.addWidget(QLabel("Select Directory for Registration:"))
+        self.register_layout.addWidget(QLabel("Select Data for Registration:"))
         self.browse_dir_btn = QPushButton("Browse Directory...")
         self.register_layout.addWidget(self.browse_dir_btn)
 
-        self.registration_path_display = QLineEdit("No directory selected for registration")
+        self.registration_path_display = QLineEdit("No Data selected for registration")
         self.registration_path_display.setReadOnly(True)
         self.registration_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
         self.register_layout.addWidget(self.registration_path_display)
@@ -100,24 +102,26 @@ class PathLoaderApp(QWidget):
         self.save_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
         self.register_layout.addWidget(self.save_path_display)
 
-        # New: EXPECTED_CELLS input
+        # EXPECTED_CELLS input
         self.register_layout.addWidget(QLabel("Expected Cells (int, default: 2):"))
         self.expected_cells_input = QLineEdit("2") # Default value 2
         self.expected_cells_input.setValidator(QIntValidator()) # Only allow integer input
         self.expected_cells_input.setStyleSheet("background-color: white; color: black;")
         self.register_layout.addWidget(self.expected_cells_input)
 
-        # New: EXPECTED_SURFACES input
+        # EXPECTED_SURFACES input
         self.register_layout.addWidget(QLabel("Expected Surfaces (int, default: 2):"))
         self.expected_surfaces_input = QLineEdit("2") # Default value 2
         self.expected_surfaces_input.setValidator(QIntValidator()) # Only allow integer input
         self.expected_surfaces_input.setStyleSheet("background-color: white; color: black;")
         self.register_layout.addWidget(self.expected_surfaces_input)
 
+        # USE_MODEL_X Checkbox
         self.use_model_x_checkbox = QCheckBox("USE_MODEL_X")
         self.use_model_x_checkbox.setChecked(True)  # Set default to TRUE
         self.register_layout.addWidget(self.use_model_x_checkbox)
 
+        # DISABLE_TQDM Checkbox
         self.disable_tqdm_checkbox = QCheckBox("DISABLE_TQDM")
         self.disable_tqdm_checkbox.setChecked(True)  # Set default to TRUE
         self.register_layout.addWidget(self.disable_tqdm_checkbox)
@@ -144,12 +148,99 @@ class PathLoaderApp(QWidget):
 
         self.tab_widget.addTab(self.register_tab_widget, "Register Data")
 
+# ----------------------------------------------------------------------------------------------------------------------------------
+        ### Tab 3: Batch Data Registration
+        self.batch_data_tab_widget = QWidget()
+        self.batch_data_register_layout = QVBoxLayout(self.batch_data_tab_widget)
+
+        # self.registration_output_ready.connect(self.append_registration_output)
+        # self.registration_error_ready.connect(self.append_registration_output)
+        # self.registration_finished.connect(self.process_finished)
+        # self.registration_process_error.connect(self.process_error)
+
+        self.batch_data_register_layout.addWidget(QLabel("Select Directory for Registration (must contain .h5 files):"))
+        self.browse_batch_dir_btn = QPushButton("Browse Directory...")
+        self.browse_batch_dir_btn.setToolTip("Select a directory containing .h5 files for batch processing")
+        self.batch_data_register_layout.addWidget(self.browse_batch_dir_btn)
+
+        self.batch_registration_path_display = QLineEdit("No directory selected for registration")
+        self.batch_registration_path_display.setReadOnly(True)
+        self.batch_registration_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
+        self.batch_data_register_layout.addWidget(self.batch_registration_path_display)
+
+        # Add Save Directory selection
+        self.batch_data_register_layout.addWidget(QLabel("Select Directory for Saving Results (Default: 'output/'):"))
+        self.batch_browse_save_dir_btn = QPushButton("Browse Save Directory...")
+        self.batch_data_register_layout.addWidget(self.batch_browse_save_dir_btn)
+
+        self.batch_save_path_display = QLineEdit("output/") 
+        self.batch_selected_save_path = "output/"
+        self.batch_save_path_display.setReadOnly(True)
+        self.batch_save_path_display.setStyleSheet("background-color: white; color: black; font-style: italic;")
+        self.batch_data_register_layout.addWidget(self.batch_save_path_display)
+
+        # EXPECTED_CELLS input
+        self.batch_data_register_layout.addWidget(QLabel("Expected Cells (int, default: 2):"))
+        self.batch_expected_cells_input = QLineEdit("2") # Default value 2
+        self.batch_expected_cells_input.setValidator(QIntValidator()) # Only allow integer input
+        self.batch_expected_cells_input.setStyleSheet("background-color: white; color: black;")
+        self.batch_data_register_layout.addWidget(self.batch_expected_cells_input)
+
+        # EXPECTED_SURFACES input
+        self.batch_data_register_layout.addWidget(QLabel("Expected Surfaces (int, default: 2):"))
+        self.batch_expected_surfaces_input = QLineEdit("2") # Default value 2
+        self.batch_expected_surfaces_input.setValidator(QIntValidator()) # Only allow integer input
+        self.batch_expected_surfaces_input.setStyleSheet("background-color: white; color: black;")
+        self.batch_data_register_layout.addWidget(self.batch_expected_surfaces_input)
+
+        # USE_MODEL_X Checkbox
+        self.batch_use_model_x_checkbox = QCheckBox("USE_MODEL_X")
+        self.batch_use_model_x_checkbox.setChecked(True)  # Set default to TRUE
+        self.batch_data_register_layout.addWidget(self.batch_use_model_x_checkbox)
+
+        # DISABLE_TQDM Checkbox
+        self.batch_disable_tqdm_checkbox = QCheckBox("DISABLE_TQDM")
+        self.batch_disable_tqdm_checkbox.setChecked(True)  # Set default to TRUE
+        self.batch_data_register_layout.addWidget(self.batch_disable_tqdm_checkbox)
+
+        self.batch_register_btn = QPushButton("Register Data")
+        self.batch_register_btn.setToolTip("Runs an external script to register the selected data.")
+        self.batch_register_btn.setEnabled(False)
+        self.batch_register_btn.setStyleSheet("font-weight: bold; padding: 5px;")
+        self.batch_data_register_layout.addWidget(self.batch_register_btn)
+
+        self.batch_cancel_register_btn = QPushButton("Cancel Registration")
+        self.batch_cancel_register_btn.setToolTip("Terminates the ongoing registration script.")
+        self.batch_cancel_register_btn.setEnabled(False)
+        self.batch_cancel_register_btn.setStyleSheet("font-weight: bold; padding: 5px;")
+        self.batch_data_register_layout.addWidget(self.batch_cancel_register_btn)
+
+        self.batch_data_register_layout.addWidget(QLabel("--- Script Output ---"))
+        self.batch_output_log = QTextEdit()
+        self.batch_output_log.setReadOnly(True)
+        self.batch_output_log.setPlaceholderText("Script output will appear here...")
+        self.batch_output_log.setStyleSheet("background-color: white; color: black; border: 1px solid #ccc; padding: 5px;")
+        self.batch_data_register_layout.addWidget(self.batch_output_log)
+        self.batch_data_register_layout.addStretch()
+
+        self.tab_widget.addTab(self.batch_data_tab_widget, "Batch Register Data")
+
+
+        # Tab 1
         self.browse_load_btn.clicked.connect(self.select_load_path)
         self.load_btn.clicked.connect(self.process_load_path)
+
+        # Tab 2
         self.browse_dir_btn.clicked.connect(self.select_registration_directory)
         self.browse_save_dir_btn.clicked.connect(self.select_save_directory)
         self.register_btn.clicked.connect(self.register_data)
         self.cancel_register_btn.clicked.connect(self.cancel_registration)
+
+        # Tab 3
+        self.browse_batch_dir_btn.clicked.connect(self.select_batch_registration_directory)
+        self.batch_browse_save_dir_btn.clicked.connect(self.select_batch_save_directory)
+        self.batch_register_btn.clicked.connect(self.batch_register_data)
+        self.batch_cancel_register_btn.clicked.connect(self.batch_cancel_registration)
 
     def append_registration_output(self, text):
         """Appends text to the output log."""
@@ -183,15 +274,13 @@ class PathLoaderApp(QWidget):
         self.load_btn.setEnabled(True)
 
     def select_registration_directory(self):
-        dir_path, _ = QFileDialog.getOpenFileName(self, "Select Directory for Registration")
+        dir_path, _ = QFileDialog.getOpenFileName(self, "Select Data for Registration")
         if not dir_path:
             self.register_btn.setEnabled(False)
-            self.registration_path_display.setText("No directory selected for registration")
+            self.registration_path_display.setText("No Data selected for registration")
             self.registration_path_display.setStyleSheet("color: #777; font-style: italic;")
             return
         
-        # if dir_path.lower().endswith(('.h5', '.hdf5')):
-        #     # self.update_load_path(dir_path)
         if dir_path.lower().endswith('.dcm'):
             dir_path = os.path.dirname(dir_path)
             # self.update_load_path(dir_path)
@@ -209,15 +298,40 @@ class PathLoaderApp(QWidget):
             self.register_btn.setEnabled(False)
         self.output_log.clear()
 
+    def select_batch_registration_directory(self):
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Batch Directory for Registration")
+        if not dir_path:
+            self.batch_register_btn.setEnabled(False)
+            self.batch_registration_path_display.setText("No directory selected for registration")
+            self.batch_registration_path_display.setStyleSheet("color: #777; font-style: italic;")
+            return
+        self.batch_selected_register_path = dir_path
+        self.batch_registration_path_display.setText(dir_path)
+        self.batch_registration_path_display.setStyleSheet("background-color: white; color: black; font-style: normal;")
+        if self.batch_selected_register_path and self.batch_selected_save_path:
+            self.batch_register_btn.setEnabled(True)
+        else:
+            self.batch_register_btn.setEnabled(False)
+        self.batch_output_log.clear()
+
+    def select_batch_save_directory(self):
+        dir_path = QFileDialog.getExistingDirectory(self, "Select Directory for Saving Results")
+        if not dir_path:
+            dir_path = "output/"
+
+        self.batch_selected_save_path = dir_path
+        self.batch_save_path_display.setText(dir_path)
+        self.batch_save_path_display.setStyleSheet("background-color: white; color: black; font-style: normal;")
+        if self.batch_selected_register_path and self.batch_selected_save_path:
+            self.batch_register_btn.setEnabled(True)
+        else:
+            self.batch_register_btn.setEnabled(False)
+
+
     def select_save_directory(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Select Directory for Saving Results")
         if not dir_path:
             dir_path = "output/"
-            # self.save_path_display.setText("No directory selected for saving")
-            # self.save_path_display.setStyleSheet("color: #777; font-style: italic;")
-            # if self.selected_register_path:
-            #     self.register_btn.setEnabled(False)
-            # return
 
         self.selected_save_path = dir_path
         self.save_path_display.setText(dir_path)
@@ -297,7 +411,7 @@ class PathLoaderApp(QWidget):
         self.cancel_register_btn.setEnabled(True)
 
         self.registration_thread = RegistrationThread(path_to_register, path_to_save, registration_script
-                                                      ,use_model_x, disable_tqdm, expected_cells, expected_surfaces)
+                                                      ,use_model_x, disable_tqdm, expected_cells, expected_surfaces, batch_data_flag = False)
         self.registration_thread.output_ready.connect(self.append_registration_output)
         self.registration_thread.error_ready.connect(self.append_registration_output)
         self.registration_thread.finished.connect(self.process_finished)
@@ -328,6 +442,69 @@ class PathLoaderApp(QWidget):
             self.browse_dir_btn.setEnabled(True)
             self.cancel_register_btn.setEnabled(False)
 
+    def batch_register_data(self):
+        batch_folder = self.batch_selected_register_path
+        save_dir = self.batch_selected_save_path
+
+        if not batch_folder:
+            QMessageBox.warning(self, "Warning", "No input directory has been selected for batch registration.")
+            return
+
+        if not save_dir:
+            QMessageBox.warning(self, "Warning", "No output directory has been selected for batch registration.")
+            return
+        
+        try:
+            expected_cells = int(self.batch_expected_cells_input.text())
+            expected_surfaces = int(self.batch_expected_surfaces_input.text())
+        except ValueError:
+            QMessageBox.critical(self, "Input Error", "Expected Cells and Expected Surfaces must be valid integers.")
+            return
+
+        self.batch_output_log.clear()
+        self.status_label_load.setText(f"Batch registration process initiated for: {os.path.basename(batch_folder)}...")
+        self.batch_output_log.append(f"Starting batch registration for: {os.path.basename(batch_folder)}...")
+
+        use_model_x = self.batch_use_model_x_checkbox.isChecked()
+        disable_tqdm = self.batch_disable_tqdm_checkbox.isChecked()
+
+        self.batch_register_btn.setEnabled(False)
+        self.browse_batch_dir_btn.setEnabled(False)
+        self.batch_cancel_register_btn.setEnabled(True)
+
+        self.registration_thread = RegistrationThread(batch_folder, save_dir, "",
+                                                    use_model_x, disable_tqdm, 
+                                                    expected_cells, expected_surfaces, batch_data_flag=True)
+        self.registration_thread.output_ready.connect(self.batch_output_log.append)
+        self.registration_thread.error_ready.connect(self.batch_output_log.append)
+        self.registration_thread.finished.connect(self.batch_process_finished)
+        self.registration_thread.process_error_occurred.connect(self.batch_process_error)
+
+        self.registration_thread.start()
+
+    def batch_process_finished(self):
+        self.status_label_load.setText("Batch registration process finished.")
+        self.batch_output_log.append("Batch registration process finished.")
+        self.batch_register_btn.setEnabled(True)
+        self.browse_batch_dir_btn.setEnabled(True)
+        self.batch_cancel_register_btn.setEnabled(False)
+        self.registration_thread = None
+
+    def batch_process_error(self, error_enum):
+        error_message = f"QProcess Error: {error_enum.name}"
+        self.status_label_load.setText(error_message)
+        self.batch_output_log.append(error_message)
+        QMessageBox.critical(self, "QProcess Error", error_message)
+
+    def batch_cancel_registration(self):
+        if self.registration_thread and self.registration_thread.isRunning():
+            self.status_label_load.setText("Cancelling batch registration process...")
+            self.batch_output_log.append("User requested cancellation. Cancelling process...")
+            self.registration_thread.terminate_process()
+            self.batch_register_btn.setEnabled(True)
+            self.browse_batch_dir_btn.setEnabled(True)
+            self.batch_cancel_register_btn.setEnabled(False)
+
 # Registration Worker Thread
 class RegistrationThread(QThread):
     output_ready = Signal(str)
@@ -336,7 +513,7 @@ class RegistrationThread(QThread):
     registration_finished = Signal(int)
     registration_cancelled = Signal()
 
-    def __init__(self, directory_path, save_directory_path, script_path, use_model_x, disable_tqdm, expected_cells, expected_surfaces):
+    def __init__(self, directory_path, save_directory_path, script_path, use_model_x, disable_tqdm, expected_cells, expected_surfaces, batch_data_flag):
         super().__init__()
         self.directory_path = directory_path
         self.save_directory_path = save_directory_path
@@ -347,6 +524,7 @@ class RegistrationThread(QThread):
         self.expected_surfaces = expected_surfaces
         self.process = None
         self._cancellation_flag = False
+        self.batch_data_flag = batch_data_flag
 
     def run(self):
         try:
@@ -357,8 +535,9 @@ class RegistrationThread(QThread):
                 save_dirname=self.save_directory_path,
                 expected_cells=self.expected_cells,
                 expected_surfaces=self.expected_surfaces,
+                batch_data_flag = self.batch_data_flag,
                 cancellation_flag=lambda: self._cancellation_flag
-            )
+                )
             if self._cancellation_flag:
                 self.registration_cancelled.emit()
             else:
