@@ -2,7 +2,7 @@ PATHS:
   DATA_LOAD_DIR: '/Users/akapatil/Documents/OCT/Bifocal registration/Hadiya_4_15_2025_1.50_3mm/batch'
   DATA_SAVE_DIR: 'output/'
   MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
-  MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_x_translation.pt'
+  MODEL_X_TRANSLATION_PATH: 'models/model_transmorph_LRNPOSEMBD_Large_onlyX_batch32_ncc_normalized_shiftrange3_dynamiccrop_onlyMSE.pt'
   USE_MODEL_X: True
   EXPECTED_SURFACES: 3
   EXPECTED_CELLS: 3
