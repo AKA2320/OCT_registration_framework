@@ -31,18 +31,19 @@ BATCH_FLAG = config['PATHS']['BATCH_FLAG']
 DISABLE_TQDM = config['PATHS']['DISABLE_TQDM']
 ENABLE_MULTIPROC_SLURM = config['PATHS']['ENABLE_MULTIPROC_SLURM']
 
-if USE_MODEL_X:
-    try:
-        DEVICE = 'cpu'
-        MODEL_X_TRANSLATION = torch.load(MODEL_X_TRANSLATION_PATH, map_location=DEVICE, weights_only=False)
-        MODEL_X_TRANSLATION.eval()
-        print("Model X loaded successfully.")
-    except Exception as e:
-        print(f"Error loading Model X: {e}")
-        print("Proceeding without Model X translation.")
+if not ENABLE_MULTIPROC_SLURM:
+    if USE_MODEL_X:
+        try:
+            DEVICE = 'cpu'
+            MODEL_X_TRANSLATION = torch.load(MODEL_X_TRANSLATION_PATH, map_location=DEVICE, weights_only=False)
+            MODEL_X_TRANSLATION.eval()
+            print("Model X loaded successfully.")
+        except Exception as e:
+            print(f"Error loading Model X: {e}")
+            print("Proceeding without Model X translation.")
+            MODEL_X_TRANSLATION = None
+    else:
         MODEL_X_TRANSLATION = None
-else:
-    MODEL_X_TRANSLATION = None
 
 def main(dirname, scan_num, pbar, data_type, disable_tqdm, save_detections, ):
     global MODEL_FEATURE_DETECT
@@ -232,7 +233,7 @@ if __name__ == "__main__":
             account='r00970',
             cores=1, 
             processes=1,
-            memory='7GB',
+            memory='15GB',
             walltime='01:00:00',
             job_extra_directives=[
                 "--cpus-per-task=1",
@@ -248,11 +249,10 @@ if __name__ == "__main__":
         client = Client(cluster)
         print(client)
         client.run(init_worker)
-        tasks = [delayed(main)(args) for args in multiproc_args_list]
+        tasks = [delayed(main)(*args) for args in multiproc_args_list]
         print(client.dashboard_link)
         print("Submitting tasks to the cluster...")
         results = compute(*tasks)
         results = client.gather(results)
-        # results = compute(*tasks)
         client.close()
         cluster.close()

@@ -5,6 +5,7 @@ description = "OCT Registration Framework package"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "bokeh>=3.7.3",
     "h5py>=3.14.0",
     "matplotlib>=3.10.3",
     "ml-collections>=1.1.0",
