@@ -42,7 +42,7 @@ def all_tran_flat(data,static_flat,disable_tqdm, scan_num):
             temp_tform_manual = AffineTransform(translation=(past_shift*2,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
         except Exception as e:
-            raise Exception(e)
+            # raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
@@ -96,7 +96,7 @@ def all_trans_y(data,static_y_motion,disable_tqdm,scan_num):
             #     f.write(f'Y motion EVERYTHIN FAILED HERE\n')
             #     f.write(f'NAME: {scan_num}\n')
             #     f.write(f'Ith: {i}\n')
-            raise Exception(e)
+            # raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i] = np.dot(transforms_all[i],temp_tform_manual)
     return transforms_all
@@ -205,7 +205,7 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
                 #     f.write(f'NAME: {scan_num}\n')
                 #     f.write(f'Ith: {i}\n')
                 #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
-                raise Exception(e)
+                # raise Exception(e)
                 cross_section = 0
             '''
             enface_shape = data[:,0,:].shape[1]
@@ -245,7 +245,7 @@ def all_trans_x(data,UP_x,DOWN_x,valid_args,enface_extraction_rows,disable_tqdm,
             #     f.write(f'NAME: {scan_num}\n')
             #     f.write(f'Ith: {i}\n')
             #     f.write(f'enface_extraction_rows: {enface_extraction_rows}\n')
-            raise Exception(e)
+            # raise Exception(e)
             temp_tform_manual = AffineTransform(translation=(0,0))
             transforms_all[i+1] = np.dot(transforms_all[i+1],temp_tform_manual)
     return transforms_all
