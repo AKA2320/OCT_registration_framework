@@ -5,6 +5,37 @@ use std::cmp::max;
 use crate::utility::min_max;
 
 
+pub fn compute_x_correction_pair(
+    static_data: Array2<f32>, moving_data: Array2<f32>, 
+    cells_coords_array: Vec<u32>, enface_extraction_rows: ArrayView2<u32>) 
+    -> (f32,f32){
+    let mut cell_warps:Vec<(f32,f32)> = Vec::with_capacity(cells_coords_array.len());
+    for (up_x) in cells_coords_array.iter(){
+        let stat_frame = static_data.slice(s![up_x..down_x, ..]);
+        let mov_frame = moving_data.slice(s![up_x..down_x, ..]);
+        let (temp_cell_shift, inv_temp_cell_shift) = infer_x_translation(model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
+        let error_cell = (temp_cell_shift + inv_temp_cell_shift).abs();
+        cell_warps.push((error_cell, temp_cell_shift));
+    }
+
+    let mut enface_warps:Vec<(f32,f32)> = Vec::with_capacity(enface_extraction_rows.len());
+    for enf_val in enface_extraction_rows.iter(){
+        let bottom_row = max(0, enf_val-32);
+        let stat_frame = static_data.slice(s![bottom_row..enf_val+32, ..]);
+        let mov_frame = moving_data.slice(s![bottom_row..enf_val+32, ..]);
+        let (temp_enface_shift, inv_temp_enface_shift) = infer_x_translation(model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
+        let error_enface = (temp_enface_shift + inv_temp_enface_shift).abs();
+        enface_warps.push((error_enface, temp_enface_shift));
+    }
+    cell_warps.extend(enface_warps.into_iter);
+    let mut all_warps = cell_warps;
+    all_warps.sort_by(|a, b| {
+        a.0.partial_cmp(&b.0).unwrap()
+    });
+    (all_warps[0].1 as f32, 0.0)
+
+}
+
 pub fn infer_x_translation(model: CModule, static_arr: Array2<f32>, moving_arr: Array2<f32>, device: Device) -> (f32,f32){
     let inp_static_arr = crop_or_pad(min_max(static_arr));
     let inp_moving_arr = crop_or_pad(min_max(moving_arr));
@@ -103,7 +134,21 @@ pub fn extract_shift_val(result: IValue) -> f32{
 mod tests {
     use super::*;
     use ndarray::{Array, array, Array2, Array3};
-    use image::{ImageBuffer, Luma};
+    use ndarray_npy::NpzReader;
+    use std::fs::File;
+
+    #[test]
+    fn check_x_correct_pair(){
+        let f = File::open("test_rust_arrays.npz").unwrap();
+        let mut npz = NpzReader::new(f).unwrap();
+
+        let static_arr: Array2<f32> = npz.by_name("static").unwrap();
+        let moving_arr: Array2<f32> = npz.by_name("moving").unwrap();
+        let cells_coords: Vec<u32> = npz.by_name("cells_coords").unwrap();
+        let enface_extraction_rows: ArrayView2<u32> = npz.by_name("enface_extraction_rows").unwrap();
+
+        println!("{:?}", static_arr);
+    }
 
     #[test]
     fn check_crop_or_pad() {

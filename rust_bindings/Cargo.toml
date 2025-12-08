@@ -16,5 +16,10 @@ numpy = "0.27.0"
 pyo3 = { version = "0.27.1", features = ["extension-module"] }
 tch = "0.22.0"
 
+
+
 [patch.crates-io]
 ndarray = { git = "https://github.com/rust-ndarray/ndarray.git", tag = "0.15.6" }
+
+[dev-dependencies]
+ndarray-npy = "0.9.1"
