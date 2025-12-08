@@ -121,8 +121,7 @@ transform = transforms.Compose([
     CropOrPad((64,416)),
 ])
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-def infer_x_translation(model_obj, static_np, moving_np, DEVICE):
+def infer_x_translation(model_obj, static_np, moving_np, DEVICE = 'cpu'):
     static_np = transform(static_np)
     moving_np = transform(moving_np)
     
@@ -133,7 +132,8 @@ def infer_x_translation(model_obj, static_np, moving_np, DEVICE):
     # Concat and infer
     with torch.no_grad():
         input_pair = torch.cat([static_np, moving_np], dim=1).double().to(DEVICE)  # shape: (1, 2, H, W)
-        moved_img, pred_translation = model_obj(input_pair)
-        # warped = warper(moving.double(), pred_translation)
-    # warped_np = warped.squeeze().numpy()
-    return pred_translation.squeeze().numpy()
+        _, pred_translation = model_obj(input_pair)
+
+        input_pair_rev = torch.cat([moving_np, static_np], dim=1).double().to(DEVICE)  # shape: (1, 2, H, W)
+        _, pred_translation_rev = model_obj(input_pair_rev)
+    return (pred_translation.squeeze().numpy()[0], pred_translation_rev.squeeze().numpy()[0])
