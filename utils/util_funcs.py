@@ -42,7 +42,7 @@ def merge_intervals(intervals):
 def warp_image_affine(image, shifts):
     mat = np.float32([[1, 0, -shifts[0]], [0, 1, -shifts[1]]])
     rows, cols = image.shape
-    warped_image = cv2.warpAffine(image, mat, (cols, rows), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    warped_image = cv2.warpAffine(image, mat, (cols, rows), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0)
     return warped_image
 
 def resource_path(relative_path):

@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from skimage.transform import warp, AffineTransform
 from tqdm import tqdm
 import h5py
 import shutil
@@ -9,7 +8,7 @@ from utils.load_data_funcs import load_data_dcm, load_h5_data
 from utils.flatten_correction_util_funcs import flatten_data
 from utils.y_correction_util_funcs import y_motion_correcting
 from utils.x_correction_util_funcs import x_motion_correction
-from utils.util_funcs import ncc
+from utils.util_funcs import ncc, warp_image_affine
 import gc
 import logging
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout )
@@ -252,7 +251,7 @@ class RegistrationWorker:
         
         for i in tqdm(range(1, data.shape[0], 2),desc='X-motion warping',
                       disable=self.DISABLE_TQDM,ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i] = warp(data[i], AffineTransform(matrix=tr_all[i]), order=3)
+            data[i] = warp_image_affine(data[i], (tr_all[i, 0, 2], 0))
         return data
 
     def _save_data(self, data, suffix=''):
