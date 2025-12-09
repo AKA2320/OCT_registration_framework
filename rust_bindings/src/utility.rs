@@ -3,9 +3,18 @@ use ndarray::{Array2, ArrayView2};
 use kornia_rs::warp::warp_affine;
 use kornia_rs::interpolation::InterpolationMode;
 
-#[derive(Debug, PartialEq)]
-pub enum NccError{
-    DimMisMatch,
+pub fn min_max(arr: Array2<f32>) -> Array2<f32>{
+    let (min_val, max_val) = arr
+    .iter()
+    .fold((f32::INFINITY, f32::NEG_INFINITY), |(mn, mx), &v| {
+        (mn.min(v), mx.max(v))
+    });
+
+    if max_val == min_val{
+        Array2::<f32>::zeros((arr.shape()[0],arr.shape()[1]))
+    }else {
+        arr.map(|&x| (x - min_val) / (max_val - min_val))
+    }
 }
 
 pub fn ndarray_to_kornia_image<T: Copy + Send + Sync>(
@@ -24,6 +33,12 @@ pub fn warp_image_kornia(img: &Image<f32, 1>, shifts: (f32,f32)) -> Image<f32, 1
                     ImageSize{height, width}, InterpolationMode::Bilinear).unwrap();
     warped
 }
+
+#[derive(Debug, PartialEq)]
+pub enum NccError{
+    DimMisMatch,
+}
+
 
 pub fn ncc(a1: ArrayView2<f32>, a2: ArrayView2<f32>) -> Result<f32, NccError>{
     if a1.dim()!=a2.dim(){

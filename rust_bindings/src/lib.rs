@@ -1,20 +1,25 @@
+// #![allow(unused, dead_code, unused_variables, unused_imports)]
+
 use pyo3::prelude::*;
 use numpy::{PyReadonlyArray2, PyReadonlyArray3};
-use ndarray::{Array3, Axis};
+use ndarray::{Array3, Axis, Array2, ArrayView3, s};
 use ndarray::parallel::prelude::*;
 mod utility;
 mod y_minimization;
 mod flat_minimization;
+mod x_correction;
 
 use utility::*;
 use y_minimization::*;
 use flat_minimization::*;
+use x_correction::*;
+
 
 
 #[pyfunction]
-fn run_y_correction_compute_rust(py: Python, static_data: PyReadonlyArray2<f32>, mov_data: PyReadonlyArray3<f32>)  
+fn run_y_correction_compute_rust(py: Python, stat_data: PyReadonlyArray2<f32>, mov_data: PyReadonlyArray3<f32>)  
     -> PyResult<Vec<(f32,f32)>> {
-    let static_image = ndarray_to_kornia_image(static_data.as_array().to_owned()); // (m * n)
+    let static_image = ndarray_to_kornia_image(stat_data.as_array().to_owned()); // (m * n)
     let moving_data: Array3<f32>  = mov_data.as_array().to_owned(); // (l * m * n)
 
     let transforms: Vec<(f32,f32)> = py.detach(|| {
@@ -26,9 +31,9 @@ fn run_y_correction_compute_rust(py: Python, static_data: PyReadonlyArray2<f32>,
 }
 
 #[pyfunction]
-fn run_flat_correction_compute_rust(py: Python, static_data: PyReadonlyArray2<f32>, mov_data: PyReadonlyArray3<f32>)  
+fn run_flat_correction_compute_rust(py: Python, stat_data: PyReadonlyArray2<f32>, mov_data: PyReadonlyArray3<f32>)  
     -> PyResult<Vec<(f32,f32)>> {
-    let static_image = ndarray_to_kornia_image(static_data.as_array().to_owned()); // (m * n)
+    let static_image = ndarray_to_kornia_image(stat_data.as_array().to_owned()); // (m * n)
     let moving_data: Array3<f32>  = mov_data.as_array().to_owned(); // (l * m * n)
 
     let transforms: Vec<(f32,f32)> = py.detach(|| {
@@ -39,10 +44,46 @@ fn run_flat_correction_compute_rust(py: Python, static_data: PyReadonlyArray2<f3
     Ok(transforms)
 }
 
+#[pyfunction]
+fn run_x_correction_compute_rust(py: Python, 
+                                stat_data: PyReadonlyArray3<f32>, 
+                                mov_data: PyReadonlyArray3<f32>,
+                                indices: Vec<usize>,
+                                enface_extraction_rows: Vec<usize>,
+                                cells_coords:  PyReadonlyArray2<u32>,
+                                valid_args: Vec<usize>)  
+    -> PyResult<Vec<(f32,f32)>> {
+    let static_data: ArrayView3<f32> = stat_data.as_array(); // (l * m * n)
+    let moving_data: ArrayView3<f32> = mov_data.as_array(); // (l * m * n)
+    let cells_coords_array: Array2<usize> = cells_coords.as_array().to_owned().mapv(|x| x as usize);
+    let model = load_model();
+
+    let transforms: Vec<(f32, f32)> = py.detach(|| {
+        moving_data.axis_iter(Axis(0)).into_par_iter().enumerate()
+        .map(|(idx, slice_mov)| {
+            if valid_args.contains(&indices[idx]) {
+                let slice_stat = static_data.slice(s![idx,..,..]);
+                compute_x_correction_pair(
+                    &model, 
+                    slice_stat.to_owned(), 
+                    slice_mov.to_owned(), 
+                    cells_coords_array.view(), 
+                    &enface_extraction_rows)
+            } else {
+                (0.0,0.0)
+            }
+        }).collect()
+    });
+
+    Ok(transforms)
+}
+
+
 #[pymodule]
 fn rust_lib(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_y_correction_compute_rust, m)?)?;
     m.add_function(wrap_pyfunction!(run_flat_correction_compute_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(run_x_correction_compute_rust, m)?)?;
     Ok(())
 }
 
@@ -51,7 +92,6 @@ fn rust_lib(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 mod tests {
     use super::*;
     use ndarray::{Array, Array3, s};
-    // use image::{ImageBuffer, Luma};
     use std::time::{Instant};
 
     #[test]

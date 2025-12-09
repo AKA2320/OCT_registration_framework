@@ -33,7 +33,7 @@ def detect_areas(result_list, pad_val, img_shape, expected_num = 2):
         coords = coords.reshape(1,-1)
     if coords.shape[0]>1:
         coords = np.sort(coords,axis=0)
-    return coords
+    return coords.astype(np.uint32)
 
 def preprocess_img(data):
     data = data.transpose(1,0)

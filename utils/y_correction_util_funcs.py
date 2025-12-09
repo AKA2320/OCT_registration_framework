@@ -1,7 +1,7 @@
-from skimage.transform import warp, AffineTransform
 from tqdm import tqdm
 import numpy as np
 import gc
+from utils.util_funcs import warp_image_affine
 from rust_lib import run_y_correction_compute_rust
 
 ## Y-Motion Functions (Memory optimized and vectorized)
@@ -30,7 +30,7 @@ def y_motion_correcting(data, slice_coords, top_surf, partition_coord, disable_t
     static_y_motion = np.argmax(np.sum(temp_sliced_data, axis=(1, 2)))
 
     # Compute all transforms
-    tr_all_y = all_trans_y(temp_sliced_data, static_y_motion, disable_tqdm, scan_num)
+    tr_y = all_trans_y(temp_sliced_data, static_y_motion, disable_tqdm, scan_num)
 
     # Clean up the temporary sliced data reference
     del temp_sliced_data
@@ -39,24 +39,19 @@ def y_motion_correcting(data, slice_coords, top_surf, partition_coord, disable_t
     if partition_coord is None:
         # Apply to entire dataset
         for i in tqdm(range(data.shape[0]), desc='Y-motion warping', disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i] = warp(data[i], AffineTransform(matrix=tr_all_y[i]), order=3)
-        del tr_all_y
-        import gc
+            # data[i] = warp(data[i], AffineTransform(matrix=tr_y[i]), order=3)
+            data[:, :, i] = warp_image_affine(data[:, :, i], (0, -tr_y[i, 1, 2]))
         gc.collect()
-
         return data
     elif top_surf:
         # Apply only to top portion
         for i in tqdm(range(data.shape[0]), desc='Y-motion warping', disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i, :partition_coord] = warp(data[i, :partition_coord], AffineTransform(matrix=tr_all_y[i]), order=3)
+            data[i, :partition_coord] = warp_image_affine(data[i, :partition_coord], (0, -tr_y[i, 1, 2]))
     else:
         # Apply only to bottom portion
         for i in tqdm(range(data.shape[0]), desc='Y-motion warping', disable=disable_tqdm, ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i, partition_coord:] = warp(data[i, partition_coord:], AffineTransform(matrix=tr_all_y[i]), order=3)
+            data[i, partition_coord:] = warp_image_affine(data[i, partition_coord:], (0, -tr_y[i, 1, 2]))
 
     # Clean up transforms array
-    del tr_all_y
-    import gc
     gc.collect()
-
     return data

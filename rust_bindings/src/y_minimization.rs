@@ -14,7 +14,8 @@ pub fn err_func_y_motion(shift: f32,
 
     let corr_err = ncc(
         warped_x.data.remove_axis(Axis(2)).view(),
-        warped_y.data.remove_axis(Axis(2)).view()).unwrap();
+        warped_y.data.remove_axis(Axis(2)).view())
+        .unwrap();
 
     1.0 - corr_err
 }
