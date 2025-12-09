@@ -130,7 +130,7 @@ def x_correction_enface_manual(static_img, moving_img, enface_extraction_rows):
     return enface_wraps
 
 def x_motion_correction(data, cells_coords, valid_args, enface_extraction_rows, disable_tqdm, scan_num, MODEL_X_TRANSLATION):
-    transforms_all = np.tile(np.eye(3),(data.shape[0],1,1))
+    tr_x = np.tile(np.eye(3),(data.shape[0],1,1))
     indices = [i for i in range(0, data.shape[0]-1, 2)]
     static_imgs = data[indices]
     moving_imgs = data[np.array(indices) + 1]
@@ -138,15 +138,18 @@ def x_motion_correction(data, cells_coords, valid_args, enface_extraction_rows, 
 
     if (MODEL_X_TRANSLATION is not None) and (cells_coords is not None):
         transform_results = run_x_correction_compute_rust(
-            stat_data = static_imgs, mov_data = moving_imgs, indices = indices, 
+            stat_data = static_imgs, 
+            mov_data = moving_imgs, 
+            indices = indices, 
             enface_extraction_rows = enface_extraction_rows,
-            cells_coords = cells_coords, valid_args = valid_args)
+            cells_coords = cells_coords, 
+            valid_args = valid_args)
         for i, result in zip(indices, transform_results):
-            transforms_all[i+1][0,2] = result[0]
+            tr_x[i+1][0,2] = result[0]
     else:
         with ThreadPoolExecutor() as executor:
             compute_fn = partial(compute_transform_for_pair, cells_coords=cells_coords, enface_extraction_rows=enface_extraction_rows, MODEL_X_TRANSLATION=MODEL_X_TRANSLATION, valid_args=valid_args)
             results = list(executor.map(compute_fn, indices, static_imgs, moving_imgs))
         for i, result in zip(indices, results):
-            transforms_all[i+1] = np.dot(transforms_all[i+1], result)
-    return transforms_all
+            tr_x[i+1] = np.dot(tr_x[i+1], result)
+    return tr_x

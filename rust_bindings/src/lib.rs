@@ -58,20 +58,21 @@ fn run_x_correction_compute_rust(py: Python,
     let cells_coords_array: Array2<usize> = cells_coords.as_array().to_owned().mapv(|x| x as usize);
     let model = load_model();
 
-    let transforms: Vec<(f32, f32)> = py.detach( || {
-        (0..indices.len()).into_par_iter()
-        .map(|idx: usize| {
-        if valid_args.contains(&indices[idx]){
-            compute_x_correction_pair(
-                &model, 
-                static_data.slice(s![idx,..,..]).to_owned(), 
-                moving_data.slice(s![idx,..,..]).to_owned(), 
-                cells_coords_array.view(), 
-                &enface_extraction_rows)
-        }else{
-            (0.0,0.0)
-        }
-    }).collect()
+    let transforms: Vec<(f32, f32)> = py.detach(|| {
+        moving_data.axis_iter(Axis(0)).into_par_iter().enumerate()
+        .map(|(idx, slice_mov)| {
+            if valid_args.contains(&indices[idx]) {
+                let slice_stat = static_data.slice(s![idx,..,..]);
+                compute_x_correction_pair(
+                    &model, 
+                    slice_stat.to_owned(), 
+                    slice_mov.to_owned(), 
+                    cells_coords_array.view(), 
+                    &enface_extraction_rows)
+            } else {
+                (0.0,0.0)
+            }
+        }).collect()
     });
 
     Ok(transforms)
