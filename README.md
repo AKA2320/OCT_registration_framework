@@ -27,7 +27,9 @@ Standalone applications for macOS and Windows are also available for download fr
 
 ## Installation
 
-**Prerequisites:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
+**Prerequisites:**
+- This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
+- Rust (latest stable version) is required for building performance-critical extensions. Please install Rust using the instructions at https://rustup.rs or via your package manager.
 
 ### Quick Setup
 
@@ -44,7 +46,51 @@ Standalone applications for macOS and Windows are also available for download fr
     # .venv\Scripts\activate   # On Windows
     ```
 
-3.  **Install the package:**
+3.  **Install Python dependencies (required for Rust build):**
+    ```shell
+    # Install core dependencies including PyTorch and maturin
+    pip install torch==2.9.0
+    pip install maturin
+    ```
+
+4.  **Building Rust extensions (required):**
+
+    Set up environment variables for LibTorch linking (platform-specific):
+
+    **macOS:**
+    ```shell
+    export LIBTORCH_USE_PYTORCH=1
+    export DYLD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
+    ```
+
+    **Linux:**
+    ```shell
+    export LIBTORCH_USE_PYTORCH=1
+    export LD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$LD_LIBRARY_PATH
+    ```
+
+    **Windows (PowerShell):**
+    ```powershell
+    $env:LIBTORCH_USE_PYTORCH = 1
+    $env:PATH = (python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '\\Lib\\site-packages\\torch\\lib')") + ';' + $env:PATH
+    ```
+
+    Then build and install the Rust extension:
+    ```shell
+    # Build the Rust extension with maturin
+    maturin build --release -m rust_bindings/Cargo.toml
+
+    # Install the compiled extension
+
+    # Macos/Linux
+    pip install rust_bindings/target/wheels/*.whl --force-reinstall
+
+    # Windows
+    $wheel_file = python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))"
+    pip install $wheel_file --force-reinstall
+    ```
+
+5.  **Install the package:**
     
     **Option A: Using pip (standard)**
     ```shell
@@ -181,6 +227,7 @@ The `models/` directory contains pre-trained models:
 
 ## Dependencies
 Key dependencies (see `pyproject.toml` for complete list):
+- **Performance Extensions**: Rust (for optimized motion correction algorithms)
 - **Deep Learning**: PyTorch
 - **Image Processing**: scikit-image, OpenCV
 - **GUI**: PySide6, Napari (for visualization)
