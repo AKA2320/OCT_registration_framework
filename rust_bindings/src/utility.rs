@@ -1,9 +1,9 @@
 use kornia_rs::image::{Image, ImageSize};
-use ndarray::{Array2, ArrayView2, concatenate, ArrayView3, Axis};
+use ndarray::{Array2, ArrayView2};
 use kornia_rs::warp::warp_affine;
 use kornia_rs::interpolation::InterpolationMode;
 
-pub fn min_max(arr: ArrayView2<f32>) -> Array2<f32>{
+pub fn min_max(arr: Array2<f32>) -> Array2<f32>{
     let (min_val, max_val) = arr
     .iter()
     .fold((f32::INFINITY, f32::NEG_INFINITY), |(mn, mx), &v| {
@@ -15,7 +15,6 @@ pub fn min_max(arr: ArrayView2<f32>) -> Array2<f32>{
     }else {
         arr.map(|&x| (x - min_val) / (max_val - min_val))
     }
-
 }
 
 pub fn ndarray_to_kornia_image<T: Copy + Send + Sync>(

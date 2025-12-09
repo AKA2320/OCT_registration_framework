@@ -243,7 +243,7 @@ class RegistrationWorker:
             valid_args = np.squeeze(np.argwhere(errs>0.7))
             for i in range(surface_coords_for_x.shape[0]):
                 val = np.argmax(np.sum(np.max(data[:,surface_coords_for_x[i,0]:surface_coords_for_x[i,1],:], axis=0), axis=1))
-                enface_extraction_rows.append(surface_coords_for_x[i,0]+val)
+                enface_extraction_rows.append(surface_coords_for_x[i,0]+val) # val is argmax so always u32 and surface_coords_for_x is u32 check detect_areas()
         else:
             valid_args = np.arange(data.shape[0])
 

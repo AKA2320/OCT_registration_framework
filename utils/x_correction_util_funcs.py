@@ -8,6 +8,7 @@ from scipy import ndimage as scp
 from utils.util_funcs import warp_image_affine
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from rust_lib import run_x_correction_compute_rust
 
 ## X-Motion Functions (Memory optimized and vectorized)
 
@@ -63,17 +64,17 @@ def compute_transform_for_pair(i, static_img, moving_img, cells_coords, enface_e
     if i not in valid_args:
         return AffineTransform(translation=(0,0))
     if (cells_coords is not None):
-        if MODEL_X_TRANSLATION is not None:
-            cell_warps = x_correction_cell_model(static_img, moving_img, cells_coords, MODEL_X_TRANSLATION)
-        else:
-            cell_warps = x_correction_cell_manual(static_img, moving_img, cells_coords)
+        # if MODEL_X_TRANSLATION is not None:
+        #     cell_warps = x_correction_cell_model(static_img, moving_img, cells_coords, MODEL_X_TRANSLATION)
+        # else:
+        cell_warps = x_correction_cell_manual(static_img, moving_img, cells_coords)
     else:
         cell_warps = [(float('inf'), 0.0)]
     if len(enface_extraction_rows)>0:
-        if MODEL_X_TRANSLATION is not None:
-            enface_wraps = x_correction_enface_model(static_img, moving_img, enface_extraction_rows, MODEL_X_TRANSLATION)
-        else:
-            enface_wraps = x_correction_enface_manual(static_img, moving_img, enface_extraction_rows)
+        # if MODEL_X_TRANSLATION is not None:
+        #     enface_wraps = x_correction_enface_model(static_img, moving_img, enface_extraction_rows, MODEL_X_TRANSLATION)
+        # else:
+        enface_wraps = x_correction_enface_manual(static_img, moving_img, enface_extraction_rows)
     else:
         enface_wraps = [(float('inf'), 0.0)]
     all_warps = [*cell_warps,*enface_wraps]
@@ -134,12 +135,18 @@ def x_motion_correction(data, cells_coords, valid_args, enface_extraction_rows, 
     static_imgs = data[indices]
     moving_imgs = data[np.array(indices) + 1]
 
-    # np.savez("rust_bindings/test_rust_arrays.npz", static=static_imgs[:5], moving=moving_imgs[:5],
-    #                                             cells_coords=cells_coords, enface_extraction_rows = enface_extraction_rows)
 
-    with ThreadPoolExecutor() as executor:
-        compute_fn = partial(compute_transform_for_pair, cells_coords=cells_coords, enface_extraction_rows=enface_extraction_rows, MODEL_X_TRANSLATION=MODEL_X_TRANSLATION, valid_args=valid_args)
-        results = list(executor.map(compute_fn, indices, static_imgs, moving_imgs))
-    for i, result in zip(indices, results):
-        transforms_all[i+1] = np.dot(transforms_all[i+1], result)
+    if (MODEL_X_TRANSLATION is not None) and (cells_coords is not None):
+        transform_results = run_x_correction_compute_rust(
+            stat_data = static_imgs, mov_data = moving_imgs, indices = indices, 
+            enface_extraction_rows = enface_extraction_rows,
+            cells_coords = cells_coords, valid_args = valid_args)
+        for i, result in zip(indices, transform_results):
+            transforms_all[i+1][0,2] = result[0]
+    else:
+        with ThreadPoolExecutor() as executor:
+            compute_fn = partial(compute_transform_for_pair, cells_coords=cells_coords, enface_extraction_rows=enface_extraction_rows, MODEL_X_TRANSLATION=MODEL_X_TRANSLATION, valid_args=valid_args)
+            results = list(executor.map(compute_fn, indices, static_imgs, moving_imgs))
+        for i, result in zip(indices, results):
+            transforms_all[i+1] = np.dot(transforms_all[i+1], result)
     return transforms_all

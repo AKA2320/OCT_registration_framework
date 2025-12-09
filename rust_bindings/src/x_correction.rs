@@ -1,33 +1,35 @@
 use tch::{CModule, Device, Tensor, IValue, Kind};
 use ndarray::{Array2, ArrayView2, concatenate, ArrayView3, Axis, s};
 use std::cmp::max;
-
 use crate::utility::min_max;
 
 
 pub fn compute_x_correction_pair(
+    model_x: &CModule,
     static_data: Array2<f32>, moving_data: Array2<f32>, 
-    cells_coords_array: Vec<u32>, enface_extraction_rows: ArrayView2<u32>) 
+    cells_coords_array: ArrayView2<usize>, enface_extraction_rows: &Vec<usize>) 
     -> (f32,f32){
+
     let mut cell_warps:Vec<(f32,f32)> = Vec::with_capacity(cells_coords_array.len());
-    for (up_x) in cells_coords_array.iter(){
+    for coords_up_down in cells_coords_array.rows(){
+        let (up_x, down_x) = (coords_up_down[0], coords_up_down[1]);
         let stat_frame = static_data.slice(s![up_x..down_x, ..]);
         let mov_frame = moving_data.slice(s![up_x..down_x, ..]);
-        let (temp_cell_shift, inv_temp_cell_shift) = infer_x_translation(model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
+        let (temp_cell_shift, inv_temp_cell_shift) = infer_x_translation(&model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
         let error_cell = (temp_cell_shift + inv_temp_cell_shift).abs();
         cell_warps.push((error_cell, temp_cell_shift));
     }
 
     let mut enface_warps:Vec<(f32,f32)> = Vec::with_capacity(enface_extraction_rows.len());
     for enf_val in enface_extraction_rows.iter(){
-        let bottom_row = max(0, enf_val-32);
-        let stat_frame = static_data.slice(s![bottom_row..enf_val+32, ..]);
+        let bottom_row = max(0, enf_val.checked_sub(32).unwrap_or(0));
+        let stat_frame = static_data.slice(s![bottom_row..enf_val +32, ..]);
         let mov_frame = moving_data.slice(s![bottom_row..enf_val+32, ..]);
-        let (temp_enface_shift, inv_temp_enface_shift) = infer_x_translation(model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
+        let (temp_enface_shift, inv_temp_enface_shift) = infer_x_translation(&model_x, stat_frame.to_owned(), mov_frame.to_owned(), Device::Cpu);
         let error_enface = (temp_enface_shift + inv_temp_enface_shift).abs();
         enface_warps.push((error_enface, temp_enface_shift));
     }
-    cell_warps.extend(enface_warps.into_iter);
+    cell_warps.extend(enface_warps.into_iter());
     let mut all_warps = cell_warps;
     all_warps.sort_by(|a, b| {
         a.0.partial_cmp(&b.0).unwrap()
@@ -36,22 +38,21 @@ pub fn compute_x_correction_pair(
 
 }
 
-pub fn infer_x_translation(model: CModule, static_arr: Array2<f32>, moving_arr: Array2<f32>, device: Device) -> (f32,f32){
-    let inp_static_arr = crop_or_pad(min_max(static_arr));
-    let inp_moving_arr = crop_or_pad(min_max(moving_arr));
+pub fn infer_x_translation(model: &CModule, static_arr: Array2<f32>, moving_arr: Array2<f32>, device: Device) -> (f32,f32){
+    let inp_static_arr = crop_or_pad(min_max(static_arr)).insert_axis(Axis(0));
+    let inp_moving_arr = crop_or_pad(min_max(moving_arr)).insert_axis(Axis(0));
 
-    let input_pair = concat_to_tensor(inp_static_arr.insert_axis(Axis(0)), inp_moving_arr.insert_axis(Axis(0)));
+    let input_pair = concat_to_tensor(inp_static_arr.view(), inp_moving_arr.view()).to_device(device);
     let result: IValue = tch::no_grad(|| {
             model.forward_is(&vec![IValue::Tensor(input_pair)]).expect("Forward failed")
         });
 
-    let input_pair_rev = concat_to_tensor(inp_moving_arr.insert_axis(Axis(0)), inp_static_arr.insert_axis(Axis(0)));
+    let input_pair_rev = concat_to_tensor(inp_moving_arr.view(), inp_static_arr.view()).to_device(device);
     let result_rev: IValue = tch::no_grad(|| {
             model.forward_is(&vec![IValue::Tensor(input_pair_rev)]).expect("Forward failed")
         });
     (extract_shift_val(result), extract_shift_val(result_rev))
 }
-
 
 pub fn crop_or_pad(mut arr: Array2<f32>) -> Array2<f32>{
     let target_height = 64;
@@ -95,7 +96,7 @@ pub fn crop_or_pad(mut arr: Array2<f32>) -> Array2<f32>{
 
 pub fn load_model() -> CModule{
     // let device = Device::Cpu;
-    let mut model = CModule::load_on_device("../models/transmorph_lateral_X_translation.pt", Device::Cpu)
+    let mut model = CModule::load_on_device("models/transmorph_lateral_X_translation.pt", Device::Cpu)
                     .expect("Failed to load model");
     model.set_eval();
     model
@@ -133,21 +134,35 @@ pub fn extract_shift_val(result: IValue) -> f32{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{Array, array, Array2, Array3};
+    use ndarray::{Array, Array1, Array2, Array3, array, s};
     use ndarray_npy::NpzReader;
     use std::fs::File;
 
     #[test]
     fn check_x_correct_pair(){
-        let f = File::open("test_rust_arrays.npz").unwrap();
-        let mut npz = NpzReader::new(f).unwrap();
+        let device = Device::Cpu;
+        let model = load_model();
+        let f = File::open("test_rust_arrays.npz").expect("Npz not found");
+        let mut npz = NpzReader::new(f).expect("Couldnt read");
 
-        let static_arr: Array2<f32> = npz.by_name("static").unwrap();
-        let moving_arr: Array2<f32> = npz.by_name("moving").unwrap();
-        let cells_coords: Vec<u32> = npz.by_name("cells_coords").unwrap();
-        let enface_extraction_rows: ArrayView2<u32> = npz.by_name("enface_extraction_rows").unwrap();
+        let static_arr: Array3<f32>= npz.by_name("static.npy").expect("Couldnt Static");
+        let moving_arr: Array3<f32> = npz.by_name("moving.npy").expect("Couldnt moving");
 
-        println!("{:?}", static_arr);
+        let cells_coords_temp: Array2<u32> = npz.by_name("cells_coords.npy").expect("Couldnt cells_coords");
+        let cells_coords: Array2<usize> = cells_coords_temp.mapv(|x| x as usize);
+
+        let enface_extraction_rows: Array1<i64> = npz.by_name("enface_extraction_rows.npy").expect("Couldnt enface_extraction_rows");
+        let enface_extraction_rows_vec: Vec<usize> = enface_extraction_rows.to_vec().into_iter().map(|x| x as usize).collect();
+        let indices: Array1<i64> = npz.by_name("indices.npy").expect("Couldnt indices");
+
+        let transforms: Vec<(f32, f32)> = (0..indices.len()).into_iter()
+            .map(|idx| {
+                compute_x_correction_pair(&model, 
+                            static_arr.slice(s![idx,..,..]).to_owned(), 
+                            moving_arr.slice(s![idx,..,..]).to_owned(), 
+                            cells_coords.view(), 
+                            &enface_extraction_rows_vec)
+            }).collect();
     }
 
     #[test]
@@ -165,30 +180,17 @@ mod tests {
 
     #[test]
     fn torch_test(){
+        let device = Device::Cpu;
         let model = load_model();
 
-        let mut array1: Array3<f32> = crop_or_pad(Array2::<f32>::zeros((64, 416))).insert_axis(Axis(0));
-        array1.slice_mut(s![.., .., 300..350]).fill(1.0);
+        let mut array1: Array2<f32> = Array2::<f32>::zeros((74, 416));
+        array1.slice_mut(s![.., 300..350]).fill(20.0);
 
-        let mut array2: Array3<f32> = crop_or_pad(Array2::<f32>::zeros((64, 416))).insert_axis(Axis(0));
-        array2.slice_mut(s![.., .., 303..353]).fill(1.0);
+        let mut array2: Array2<f32> = Array2::<f32>::zeros((60, 416));
+        array2.slice_mut(s![.., 304..354]).fill(5.0);
 
-        let input1 = concat_to_tensor(array1.view(), array2.view());
-        let input2 = concat_to_tensor(array2.view(), array1.view());
+        let (val1, val2) = infer_x_translation(&model, array1, array2, device);
 
-        println!("input1 is : {:?}", input1);
-        println!("input2 is : {:?}", input2);
-        
-        let result: IValue = tch::no_grad(|| {
-            model.forward_is(&vec![IValue::Tensor(input1)]).expect("Forward failed")
-        });
-        let val1 = extract_shift_val(result);
-        
-        let result: IValue = tch::no_grad(|| {
-            model.forward_is(&vec![IValue::Tensor(input2)]).expect("Forward failed")
-        });
-        let val2 = extract_shift_val(result);
-        
         println!("Val1: {} \n Val2: {}",val1, val2);
         assert!(val1+val2 < 0.2);
     }
