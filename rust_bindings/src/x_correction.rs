@@ -94,9 +94,9 @@ pub fn crop_or_pad(mut arr: Array2<f32>) -> Array2<f32>{
     arr
 }
 
-pub fn load_model() -> CModule{
+pub fn load_model(path_model: &str) -> CModule{
     // let device = Device::Cpu;
-    let mut model = CModule::load_on_device("models/transmorph_lateral_X_translation.pt", Device::Cpu)
+    let mut model = CModule::load_on_device(path_model, Device::Cpu)
                     .expect("Failed to load model");
     model.set_eval();
     model
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn check_x_correct_pair(){
         let device = Device::Cpu;
-        let model = load_model();
+        let model = load_model("../models/transmorph_lateral_X_translation.pt");
         let f = File::open("test_rust_arrays.npz").expect("Npz not found");
         let mut npz = NpzReader::new(f).expect("Couldnt read");
 
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn torch_test(){
         let device = Device::Cpu;
-        let model = load_model();
+        let model = load_model("../models/transmorph_lateral_X_translation.pt");
 
         let mut array1: Array2<f32> = Array2::<f32>::zeros((74, 416));
         array1.slice_mut(s![.., 300..350]).fill(20.0);

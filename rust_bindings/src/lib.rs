@@ -51,12 +51,13 @@ fn run_x_correction_compute_rust(py: Python,
                                 indices: Vec<usize>,
                                 enface_extraction_rows: Vec<usize>,
                                 cells_coords:  PyReadonlyArray2<u32>,
-                                valid_args: Vec<usize>)  
+                                valid_args: Vec<usize>,
+                                model_path: &str)  
     -> PyResult<Vec<(f32,f32)>> {
     let static_data: ArrayView3<f32> = stat_data.as_array(); // (l * m * n)
     let moving_data: ArrayView3<f32> = mov_data.as_array(); // (l * m * n)
     let cells_coords_array: Array2<usize> = cells_coords.as_array().to_owned().mapv(|x| x as usize);
-    let model = load_model();
+    let model = load_model(model_path);
 
     let transforms: Vec<(f32, f32)> = py.detach(|| {
         moving_data.axis_iter(Axis(0)).into_par_iter().enumerate()
@@ -141,16 +142,6 @@ mod tests {
             results.push(compute_flat_motion(&array1_image, temp_arr2).0.round() as i32);
         }
 
-        // let (h, w1) = array1.slice(s![.., .., 25]).dim();
-        // let buffer1: ImageBuffer<Luma<u8>, Vec<u8>> = ImageBuffer::from_raw(
-        // w1 as u32,
-        // h as u32,
-        // array1.slice(s![.., .., 25]).mapv(|v| (v * 255.0).clamp(0.0, 255.0) as u8).as_slice().unwrap().to_vec(),
-        // )
-        // .unwrap();
-        // buffer1.save("test_sidearray_flatten1.png").unwrap();
-
-        // println!("{:?}", results);
         for i in 0..results.len(){
             assert_eq!(-results[i], shifts[i]);
         }

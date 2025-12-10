@@ -97,29 +97,22 @@ class RegistrationMaster:
         try:
             models['feature_yolo'] = YOLO(self.MODEL_FEATURE_DETECT_PATH)
             logging.info("YOLO Model Loaded Succesfully.")
-            # if self.is_gui_flag:
-            #     self.output_queue.put("YOLO Model Loaded Succesfully.\n")
         except Exception as e:
             logging.error(f"Error loading YOLO model: {e}", exc_info=True)
             sys.exit("Failed to load YOLO model. Exiting.")
         if self.USE_MODEL_LATERAL_TRANSLATION:
             try:
                 if not os.path.exists(self.MODEL_X_TRANSLATION_PATH):
-                    logging.info("Model X not present in models.....Downloading the model.")
-                    # if self.is_gui_flag:
-                    #     self.output_queue.put("Model X not present in models/ \n Downloading the model.\n")     
+                    logging.info("Model X not present in models.....Downloading the model.")  
                     download_model(model_x_translation_url,self.MODEL_X_TRANSLATION_PATH)
                     logging.info("Model Downloaded Succesfully.")
-                MODEL_X_TRANSLATION = torch.jit.load(self.MODEL_X_TRANSLATION_PATH, map_location=self.DEVICE)
-                MODEL_X_TRANSLATION.eval()
-                logging.info("Model X loaded successfully.")
-                # if self.is_gui_flag:
-                #     self.output_queue.put("Model X loaded successfully.\n")     
+                # MODEL_X_TRANSLATION = torch.jit.load(self.MODEL_X_TRANSLATION_PATH, map_location=self.DEVICE)
+                # MODEL_X_TRANSLATION.eval()
+                # logging.info("Model X loaded successfully.")  
+                MODEL_X_TRANSLATION = self.MODEL_X_TRANSLATION_PATH
             except Exception as e:
                 logging.error(f"Error loading Model X: {e}", exc_info=True)
-                logging.info("Proceeding without Model X translation.")
-                # if self.is_gui_flag:
-                #     self.output_queue.put("Error loading Model X: {e} \nProceeding without Model X translation.")     
+                logging.info("Proceeding without Model X translation.")  
                 MODEL_X_TRANSLATION = None
         else:
             MODEL_X_TRANSLATION = None

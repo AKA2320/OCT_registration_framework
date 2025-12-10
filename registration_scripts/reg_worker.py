@@ -30,7 +30,7 @@ class RegistrationWorker:
                 EXPECTED_SURFACES, EXPECTED_CELLS):
         self.config = config
         self.MODEL_FEATURE_DETECT = models['feature_yolo']
-        self.MODEL_X_TRANSLATION = models['x_translation']
+        self.MODEL_X_TRANSLATION_PATH = models['x_translation']
         self.scan_num = scan_num
         self.pbar = pbar
         self.DATA_LOAD_DIR = DATA_LOAD_DIR
@@ -247,7 +247,7 @@ class RegistrationWorker:
             valid_args = np.arange(data.shape[0])
 
         tr_all = x_motion_correction(data, cells_coords_for_x, valid_args, enface_extraction_rows,
-                            self.DISABLE_TQDM, self.scan_num, self.MODEL_X_TRANSLATION)
+                            self.DISABLE_TQDM, self.scan_num, self.MODEL_X_TRANSLATION_PATH )
         
         for i in tqdm(range(1, data.shape[0], 2),desc='X-motion warping',
                       disable=self.DISABLE_TQDM,ascii="░▖▘▝▗▚▞█", leave=False):

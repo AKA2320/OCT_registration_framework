@@ -60,7 +60,7 @@ def check_multiple_warps(stat_img, mov_img, *args):
         errors.append(check_best_warp(stat_img, mov_img, warps[warp_value]))
     return np.argmax(errors)
 
-def compute_transform_for_pair(i, static_img, moving_img, cells_coords, enface_extraction_rows, MODEL_X_TRANSLATION, valid_args):
+def compute_transform_for_pair(i, static_img, moving_img, cells_coords, enface_extraction_rows, valid_args):
     if i not in valid_args:
         return AffineTransform(translation=(0,0))
     if (cells_coords is not None):
@@ -82,15 +82,15 @@ def compute_transform_for_pair(i, static_img, moving_img, cells_coords, enface_e
     temp_tform_manual = AffineTransform(translation=(all_warps[0][1],0))
     return temp_tform_manual
 
-def x_correction_cell_model(static_img, moving_img, cells_coords, MODEL_X_TRANSLATION):
-    cell_warps = []
-    for UP_x, DOWN_x in cells_coords:
-        stat = static_img[UP_x:DOWN_x, :]
-        temp_manual = moving_img[UP_x:DOWN_x, :]
-        temp_cell_shift, inv_temp_cell_shift = infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual)
-        error_cell = abs(temp_cell_shift + inv_temp_cell_shift)
-        cell_warps.append((error_cell, temp_cell_shift))
-    return cell_warps
+# def x_correction_cell_model(static_img, moving_img, cells_coords, MODEL_X_TRANSLATION):
+#     cell_warps = []
+#     for UP_x, DOWN_x in cells_coords:
+#         stat = static_img[UP_x:DOWN_x, :]
+#         temp_manual = moving_img[UP_x:DOWN_x, :]
+#         temp_cell_shift, inv_temp_cell_shift = infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual)
+#         error_cell = abs(temp_cell_shift + inv_temp_cell_shift)
+#         cell_warps.append((error_cell, temp_cell_shift))
+#     return cell_warps
 
 def x_correction_cell_manual(static_img, moving_img, cells_coords):
     if cells_coords.shape[0]==1:
@@ -107,16 +107,16 @@ def x_correction_cell_manual(static_img, moving_img, cells_coords):
     cell_warps = [(error_cell, temp_cell_patch_shift)]
     return cell_warps
 
-def x_correction_enface_model(static_img, moving_img, enface_extraction_rows, MODEL_X_TRANSLATION):
-    enface_wraps = []
-    for enf_idx in range(len(enface_extraction_rows)):
-        bottom_row = max(0, enface_extraction_rows[enf_idx]-32)
-        stat = static_img[bottom_row:enface_extraction_rows[enf_idx]+32]
-        temp_manual = moving_img[bottom_row:enface_extraction_rows[enf_idx]+32]
-        temp_enface_shift, inv_temp_enface_shift = infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual)
-        error_enface = abs(temp_enface_shift + inv_temp_enface_shift)
-        enface_wraps.append((error_enface, temp_enface_shift))
-    return enface_wraps
+# def x_correction_enface_model(static_img, moving_img, enface_extraction_rows, MODEL_X_TRANSLATION):
+#     enface_wraps = []
+#     for enf_idx in range(len(enface_extraction_rows)):
+#         bottom_row = max(0, enface_extraction_rows[enf_idx]-32)
+#         stat = static_img[bottom_row:enface_extraction_rows[enf_idx]+32]
+#         temp_manual = moving_img[bottom_row:enface_extraction_rows[enf_idx]+32]
+#         temp_enface_shift, inv_temp_enface_shift = infer_x_translation(MODEL_X_TRANSLATION, stat, temp_manual)
+#         error_enface = abs(temp_enface_shift + inv_temp_enface_shift)
+#         enface_wraps.append((error_enface, temp_enface_shift))
+#     return enface_wraps
 
 def x_correction_enface_manual(static_img, moving_img, enface_extraction_rows):
     enface_wraps = []
@@ -129,26 +129,27 @@ def x_correction_enface_manual(static_img, moving_img, enface_extraction_rows):
         enface_wraps.append((error_enface, temp_enface_shift))
     return enface_wraps
 
-def x_motion_correction(data, cells_coords, valid_args, enface_extraction_rows, disable_tqdm, scan_num, MODEL_X_TRANSLATION):
+def x_motion_correction(data, cells_coords, valid_args, enface_extraction_rows, disable_tqdm, scan_num, MODEL_X_TRANSLATION_PATH):
     tr_x = np.tile(np.eye(3),(data.shape[0],1,1))
     indices = [i for i in range(0, data.shape[0]-1, 2)]
     static_imgs = data[indices]
     moving_imgs = data[np.array(indices) + 1]
 
 
-    if (MODEL_X_TRANSLATION is not None) and (cells_coords is not None):
+    if (MODEL_X_TRANSLATION_PATH is not None) and (cells_coords is not None):
         transform_results = run_x_correction_compute_rust(
             stat_data = static_imgs, 
             mov_data = moving_imgs, 
             indices = indices, 
             enface_extraction_rows = enface_extraction_rows,
             cells_coords = cells_coords, 
-            valid_args = valid_args)
+            valid_args = valid_args,
+            model_path = MODEL_X_TRANSLATION_PATH)
         for i, result in zip(indices, transform_results):
             tr_x[i+1][0,2] = result[0]
     else:
         with ThreadPoolExecutor() as executor:
-            compute_fn = partial(compute_transform_for_pair, cells_coords=cells_coords, enface_extraction_rows=enface_extraction_rows, MODEL_X_TRANSLATION=MODEL_X_TRANSLATION, valid_args=valid_args)
+            compute_fn = partial(compute_transform_for_pair, cells_coords=cells_coords, enface_extraction_rows=enface_extraction_rows, valid_args=valid_args)
             results = list(executor.map(compute_fn, indices, static_imgs, moving_imgs))
         for i, result in zip(indices, results):
             tr_x[i+1] = np.dot(tr_x[i+1], result)
