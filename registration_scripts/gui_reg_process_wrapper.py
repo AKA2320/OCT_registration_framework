@@ -30,7 +30,7 @@ def run_registration_process(output_queue, cancel_event, *args):
         gui_start_process.join() 
     except Exception as e:
         # Ensure exceptions in the child process are reported to the GUI
-        output_queue.put(f"\n--- A CRITICAL ERROR OCCURRED IN THE PROCESS ---\n")
+        output_queue.put("\n--- A CRITICAL ERROR OCCURRED IN THE PROCESS ---\n")
         output_queue.put(str(e))
     finally:
         # Signal that the process is done

@@ -8,7 +8,6 @@ import napari
 import numpy as np
 import yaml
 import logging
-import sys
 
 def load_h5_data(dirname, scan_num):
     if dirname.endswith(('.h5','.hdf5')):
