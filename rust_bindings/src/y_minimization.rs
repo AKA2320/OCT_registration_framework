@@ -1,21 +1,23 @@
-use argmin::solver::brent::{BrentOpt};
-use argmin::core::{CostFunction, Error, Executor};
-use kornia_rs::image::{Image};
-use ndarray::{Array2, Axis};
 use crate::utility::{ncc, ndarray_to_kornia_image, warp_image_kornia};
+use argmin::core::{CostFunction, Error, Executor};
+use argmin::solver::brent::BrentOpt;
+use kornia_rs::image::Image;
+use ndarray::{Array2, Axis};
 
-pub fn err_func_y_motion(shift: f32, 
-    image_x: &Image<f32, 1>, 
-    image_y: &Image<f32, 1>, 
-    past_shift: f32) -> f32 
-    {
-    let warped_x = warp_image_kornia(&image_x, (0.0, -shift-past_shift,));
-    let warped_y = warp_image_kornia(&image_y, (0.0, shift+past_shift));
+pub fn err_func_y_motion(
+    shift: f32,
+    image_x: &Image<f32, 1>,
+    image_y: &Image<f32, 1>,
+    past_shift: f32,
+) -> f32 {
+    let warped_x = warp_image_kornia(image_x, (0.0, -shift - past_shift));
+    let warped_y = warp_image_kornia(image_y, (0.0, shift + past_shift));
 
     let corr_err = ncc(
         warped_x.data.remove_axis(Axis(2)).view(),
-        warped_y.data.remove_axis(Axis(2)).view())
-        .unwrap();
+        warped_y.data.remove_axis(Axis(2)).view(),
+    )
+    .unwrap();
 
     1.0 - corr_err
 }
@@ -33,7 +35,12 @@ impl<'a> CostFunction for YMotionErrorCost<'a> {
 
     fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
         let shift = param;
-        Ok(err_func_y_motion(*shift, self.image_x, self.image_y, self.past_shift))
+        Ok(err_func_y_motion(
+            *shift,
+            self.image_x,
+            self.image_y,
+            self.past_shift,
+        ))
     }
 }
 
@@ -45,13 +52,13 @@ pub fn compute_y_motion(static_image_arr1: &Image<f32, 1>, arr2: Array2<f32>) ->
 
     for _ in 0..10 {
         let cost: YMotionErrorCost<'_> = YMotionErrorCost {
-            image_x: &static_image_arr1,
+            image_x: static_image_arr1,
             image_y: &moving_image_arr2,
-            past_shift: past_shift,
+            past_shift,
         };
 
         // let p0 = vec![0.0_f32];
-        let solver = BrentOpt::new(-10.0_f32,10.0_f32);
+        let solver = BrentOpt::new(-10.0_f32, 10.0_f32);
 
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(2000)) // Limit iterations per loop
@@ -74,28 +81,22 @@ pub fn compute_y_motion(static_image_arr1: &Image<f32, 1>, arr2: Array2<f32>) ->
 
     let tx = 0.0;
     let ty = past_shift * 2.0;
-    // array![
-    //     [1.0, 0.0, tx],
-    //     [0.0, 1.0, ty],
-    //     [0.0, 0.0, 1.0]
-    // ]
-    (tx,ty)
+    (tx, ty)
 }
-
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{Array,s};
+    use ndarray::{Array, s};
     // use image::{ImageBuffer, Luma};
-    use super::*; 
+    use super::*;
 
     #[test]
-    fn shift_transfrom(){
-        let mut array1: Array2<f32> = Array::<f32,_>::zeros((50,1000));
+    fn shift_transfrom() {
+        let mut array1: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
         array1.slice_mut(s![15..20, 500..550]).fill(1.0);
         let array1_image = ndarray_to_kornia_image(array1);
 
-        let mut array2: Array2<f32> = Array::<f32,_>::zeros((50,1000));
+        let mut array2: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
         array2.slice_mut(s![32..37, 500..550]).fill(1.0);
 
         // let (h, w1) = array1.dim();
@@ -107,21 +108,21 @@ mod tests {
         // .unwrap();
         // buffer1.save("test_array_big1.png").unwrap();
 
-        let res_transfrom: (f32,f32) = compute_y_motion(&array1_image, array2);
+        let res_transfrom: (f32, f32) = compute_y_motion(&array1_image, array2);
         println!("{:?}", res_transfrom);
         assert!(res_transfrom.1.round() as i32 == -17);
     }
 
-        #[test]
-    fn no_shift_transfrom(){
-        let mut array1: Array2<f32> = Array::<f32,_>::zeros((50,1000));
+    #[test]
+    fn no_shift_transfrom() {
+        let mut array1: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
         array1.slice_mut(s![20..25, 500..550]).fill(1.0);
         let array1_image = ndarray_to_kornia_image(array1);
 
-        let mut array2: Array2<f32> = Array::<f32,_>::zeros((50,1000));
+        let mut array2: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
         array2.slice_mut(s![20..25, 500..550]).fill(1.0);
 
-        let res_transfrom: (f32,f32) = compute_y_motion(&array1_image, array2);
+        let res_transfrom: (f32, f32) = compute_y_motion(&array1_image, array2);
         // println!("{:?}", res_transfrom);
         assert!(res_transfrom.1.round() as i32 == 0);
     }
