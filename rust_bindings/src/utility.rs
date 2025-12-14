@@ -34,7 +34,7 @@ pub fn warp_image_kornia(img: &Image<f32, 1>, shifts: (f32, f32)) -> Image<f32, 
         ImageSize { height, width },
         InterpolationMode::Bilinear,
     )
-    .unwrap()
+    .expect("Kornia Warping failed")
 }
 
 #[derive(Debug, PartialEq)]
