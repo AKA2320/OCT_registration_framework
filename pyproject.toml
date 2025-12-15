@@ -1,7 +1,7 @@
 [project]
-name = "oct-reg"
+name = "oct-proc"
 version = "0.1.0"
-description = "OCT Registration Framework package"
+description = "OCT Processing Framework package"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,8 +12,8 @@ dependencies = [
     "napari>=0.6.2",
     "natsort>=8.4.0",
     "numpy>=2.3.1",
+    "patchelf>=0.17.2.4",
     "pydicom>=3.0.1",
-    "pyside6>=6.9.1",
     "scikit-image>=0.25.2",
     "timm>=1.0.17",
     "torch==2.9.0",
@@ -26,6 +26,9 @@ dependencies = [
 multiproc = [
     "dask>=2025.5.1",
     "dask-jobqueue>=0.9.0",
+]
+gui = [
+    "pyside6>=6.9.1",
 ]
 
 [tool.setuptools]
