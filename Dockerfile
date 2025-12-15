@@ -17,7 +17,7 @@ ENV PATH="/.venv/bin:$PATH"
 RUN pip install --upgrade pip && \
     pip install uv && \
     uv pip install torch==2.9.0 && \
-    pip install maturin patchelf
+    uv pip install maturin patchelf
 
 COPY rust_bindings/ ./rust_bindings/
 WORKDIR /rust_bindings
@@ -27,7 +27,7 @@ RUN export LIBTORCH_USE_PYTORCH=1 && \
 COPY pyproject.toml ./
 COPY registration_scripts/ ./registration_scripts/
 COPY utils/ ./utils/
-RUN uv pip install -e .
+RUN uv pip install "oct-proc[gui]"
 
 # Runtime stage
 FROM python:3.12-slim AS runtime
@@ -57,4 +57,4 @@ WORKDIR /app
 RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app && rm -rf /var/lib/apt/lists/*
 USER app
 
-CMD ["python", "--version"]
+CMD ["python", "pyside_gui.py"]

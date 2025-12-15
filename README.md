@@ -30,6 +30,9 @@ Standalone applications for macOS and Windows are also available for download fr
 **Prerequisites:**
 - This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
 - Rust (latest stable version) is required for building performance-critical extensions. Please install Rust using the instructions at https://rustup.rs or via your package manager.
+  - **macOS:** Install Xcode Command Line Tools with `xcode-select --install`
+  - **Linux:** Install build-essential, clang (e.g., on Ubuntu: `sudo apt install build-essential clang`)
+  - **Windows:** Install Visual Studio Build Tools (for MSVC) or MinGW (for GNU) if not already installed.
 
 ### Quick Setup
 
@@ -50,7 +53,7 @@ Standalone applications for macOS and Windows are also available for download fr
     ```shell
     # Install core dependencies including PyTorch and maturin
     pip install torch==2.9.0
-    pip install maturin
+    pip install maturin patchelf
     ```
 
 4.  **Building Rust extensions (required):**
@@ -78,29 +81,20 @@ Standalone applications for macOS and Windows are also available for download fr
     Then build and install the Rust extension:
     ```shell
     # Build the Rust extension with maturin
-    maturin build --release -m rust_bindings/Cargo.toml
-
-    # Install the compiled extension
-
-    # Macos/Linux
-    pip install rust_bindings/target/wheels/*.whl --force-reinstall
-
-    # Windows
-    $wheel_file = python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))"
-    pip install $wheel_file --force-reinstall
+    maturin develop --release -m rust_bindings/Cargo.toml
     ```
 
 5.  **Install the package:**
     
     **Option A: Using pip (standard)**
     ```shell
-    pip install .
+    pip install oct-proc
     ```
     
     **Option B: Using uv (faster, recommended)**
     ```shell
     pip install uv
-    uv pip install .
+    uv pip install oct-proc
     ```
     * Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 
@@ -111,9 +105,9 @@ Standalone applications for macOS and Windows are also available for download fr
 
 4. **Install optional dependencies (multiprocessing support) (SLURM based multiprocessing):**
     ```shell
-    pip install ".[multiproc]"  # Using pip
+    pip install "oct-proc[multiproc]"  # Using pip
     # or
-    uv pip install ".[multiproc]"  # Using uv (faster)
+    uv pip install "oct-proc[multiproc]"  # Using uv (faster)
     ```
 
 ## Usage
@@ -129,8 +123,8 @@ The GUI provides a user-friendly interface with three main tabs for different wo
 - Visualize data using the integrated Napari viewer
 - Supports both single volume and directory-based loading
 
-#### 2. Register Data Tab
-- Register individual OCT volumes
+#### 2. Process Data Tab
+- Process individual OCT volumes
 - Configure processing parameters in real-time:
   - Expected Cells: Number of cell layers to detect (default: 2)
   - Expected Surfaces: Number of surfaces to detect (default: 2)
@@ -138,22 +132,27 @@ The GUI provides a user-friendly interface with three main tabs for different wo
   - Save Feature Detections: Save annotated images of the detected features
 - Cancel long-running registration processes using the Cancel button
 
-#### 3. Batch Register Data Tab
+#### 3. Batch Process Data Tab
 - Process multiple OCT volumes in batch mode
 - Same configurable parameters as single registration
 - Process entire directories of `.h5` files
 
 To use the GUI:
 
-1.  **Prepare your OCT data:**
+1.  **Install GUI dependencies (if not already installed):**
+    ```shell
+    pip install "oct-proc[gui]"
+    ```
+
+2.  **Prepare your OCT data:**
     *   Ensure your `.h5` or `.dcm` files are organized in accessible directories
 
-2.  **Launch the GUI:**
+3.  **Launch the GUI:**
     ```shell
     python pyside_gui.py
     ```
 
-3.  **Configure through the interface:**
+4.  **Configure through the interface:**
     *   Select input data directory
     *   Specify output save directory
     *   Adjust processing parameters as needed
@@ -193,9 +192,9 @@ The command-line interface provides access to advanced features including SLURM-
 
 **Note:** SLURM multiprocessing capabilities are only available through the command-line interface and require additional dependencies. Install them with:
 ```shell
-pip install ".[multiproc]"  # Using pip
+pip install "oct-proc[multiproc]"  # Using pip
 # or
-uv pip install ".[multiproc]"  # Using uv (faster)
+uv pip install "oct-proc[multiproc]"  # Using uv (faster)
 ```
 
 ### Download
