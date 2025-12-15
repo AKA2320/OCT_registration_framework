@@ -50,7 +50,7 @@ Standalone applications for macOS and Windows are also available for download fr
     ```shell
     # Install core dependencies including PyTorch and maturin
     pip install torch==2.9.0
-    pip install maturin
+    pip install maturin patchelf
     ```
 
 4.  **Building Rust extensions (required):**
@@ -78,16 +78,7 @@ Standalone applications for macOS and Windows are also available for download fr
     Then build and install the Rust extension:
     ```shell
     # Build the Rust extension with maturin
-    maturin build --release -m rust_bindings/Cargo.toml
-
-    # Install the compiled extension
-
-    # Macos/Linux
-    pip install rust_bindings/target/wheels/*.whl --force-reinstall
-
-    # Windows
-    $wheel_file = python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))"
-    pip install $wheel_file --force-reinstall
+    maturin develop --release -m rust_bindings/Cargo.toml
     ```
 
 5.  **Install the package:**
