@@ -1,4 +1,4 @@
-FROM python:3.12 AS builder
+FROM python:3.12-slim AS builder
 
 RUN apt-get update && apt-get install -y \
     curl \
@@ -27,7 +27,7 @@ RUN export LIBTORCH_USE_PYTORCH=1 && \
 COPY pyproject.toml ./
 COPY registration_scripts/ ./registration_scripts/
 COPY utils/ ./utils/
-RUN uv pip install "oct-proc[gui]"
+RUN uv pip install .
 
 # Runtime stage
 FROM python:3.12-slim AS runtime
@@ -35,26 +35,22 @@ FROM python:3.12-slim AS runtime
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     libglib2.0-0 \
+    libgl1 \
     libsm6 \
-    libxext6 \
-    libxrender-dev \
     libgthread-2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder .venv .venv
 ENV PATH="/.venv/bin:$PATH"
 
-COPY utils/ /app
-COPY registration_scripts/ /app
+COPY utils/ /app/utils/
+COPY registration_scripts/ /app/registration_scripts/
 COPY registration_script.py /app
-COPY datapaths.yaml /app
-COPY models/ /app
-COPY pyside_gui.py /app
-COPY pyproject.toml /app
-COPY uv.lock /app
 WORKDIR /app
 
-RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app && rm -rf /var/lib/apt/lists/*
+RUN useradd --create-home --shell /bin/bash app && \
+    pip cache purge && \
+    chown -R app:app /app && rm -rf /var/lib/apt/lists/*
 USER app
 
-CMD ["python", "pyside_gui.py"]
+CMD ["python", "registration_script.py"]
