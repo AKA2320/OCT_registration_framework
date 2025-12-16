@@ -16,7 +16,7 @@ ENV PATH="/.venv/bin:$PATH"
 
 RUN pip install --upgrade pip && \
     pip install uv && \
-    uv pip install torch==2.9.0 && \
+    uv pip install torch==2.9.0 --torch-backend cpu && \
     uv pip install maturin patchelf
 
 COPY rust_bindings/ ./rust_bindings/
