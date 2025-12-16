@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install "oct-proc[gui]"
+        pip install ".[gui]"
         pip install pyinstaller
 
     - name: Run Maturin for Rust Bindings
@@ -73,7 +73,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install "oct-proc[gui]"
+        pip install ".[gui]"
         pip install pyinstaller
     
     - name: Run Maturin for Rust Bindings
