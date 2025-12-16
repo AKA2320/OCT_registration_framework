@@ -88,13 +88,13 @@ Standalone applications for macOS and Windows are also available for download fr
     
     **Option A: Using pip (standard)**
     ```shell
-    pip install oct-proc
+    pip install .
     ```
     
     **Option B: Using uv (faster, recommended)**
     ```shell
     pip install uv
-    uv pip install oct-proc
+    uv pip install .
     ```
     * Before using `uv`, ensure that it is installed. Refer to the official [uv documentation](https://docs.astral.sh/uv/getting-started/installation/) for installation instructions.
 
@@ -105,9 +105,9 @@ Standalone applications for macOS and Windows are also available for download fr
 
 4. **Install optional dependencies (multiprocessing support) (SLURM based multiprocessing):**
     ```shell
-    pip install "oct-proc[multiproc]"  # Using pip
+    pip install ".[multiproc]"  # Using pip
     # or
-    uv pip install "oct-proc[multiproc]"  # Using uv (faster)
+    uv pip install ".[multiproc]"  # Using uv (faster)
     ```
 
 ## Usage
@@ -141,7 +141,7 @@ To use the GUI:
 
 1.  **Install GUI dependencies (if not already installed):**
     ```shell
-    pip install "oct-proc[gui]"
+    pip install ".[gui]"
     ```
 
 2.  **Prepare your OCT data:**
@@ -192,9 +192,9 @@ The command-line interface provides access to advanced features including SLURM-
 
 **Note:** SLURM multiprocessing capabilities are only available through the command-line interface and require additional dependencies. Install them with:
 ```shell
-pip install "oct-proc[multiproc]"  # Using pip
+pip install ".[multiproc]"  # Using pip
 # or
-uv pip install "oct-proc[multiproc]"  # Using uv (faster)
+uv pip install ".[multiproc]"  # Using uv (faster)
 ```
 
 ### Download
