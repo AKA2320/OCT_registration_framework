@@ -127,17 +127,25 @@ class RegistrationMaster:
             if self.DATA_LOAD_DIR.lower().endswith('.h5'):
                 self.data_type = 'h5'
                 scans = [self.DATA_LOAD_DIR.split('/')[-1].removesuffix('.h5')]
-            else:
+            elif os.listdir(self.DATA_LOAD_DIR)[0].endswith(('.dcm','.DCM')):
                 self.data_type = 'dcm'
                 scans = [self.DATA_LOAD_DIR.split('/')[-1]]
+            else:
+                if "binfiles" in os.listdir(self.DATA_LOAD_DIR):
+                    self.data_type = 'bin'
+                    scans = [self.DATA_LOAD_DIR.split('/')[-1]]
+                else:
+                    raise FileNotFoundError("Missing data, make sure its formatted according to README")
         elif self.BATCH_FLAG:
             scans = [i for i in os.listdir(self.DATA_LOAD_DIR) if (i.startswith('scan'))]
             scans = natsorted(scans)
             first_path = os.listdir(os.path.join(self.DATA_LOAD_DIR,scans[0]))[0]
             if first_path.endswith('.h5'):
                 self.data_type = 'h5'
-            else:
+            elif first_path.endswith(('.dcm', '.DCM')):
                 self.data_type = 'dcm'
+            else:
+                self.data_type = 'bin'
 
         pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable = self.DISABLE_TQDM)
         if not self.ENABLE_MULTIPROC_SLURM:

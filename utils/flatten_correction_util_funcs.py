@@ -23,6 +23,7 @@ def flatten_data(data, slice_coords, top_surf, partition_coord, disable_tqdm, sc
     """Memory optimized flattening that works in-place."""
     # Create view of sliced data to avoid unnecessary copy
     slice_indices = np.r_[tuple(np.r_[start:end] for start, end in slice_coords)]
+    # print(slice_indices.dtype, slice_coords )
     temp_sliced_data = data[:, slice_indices, :]  # This is a view, not a copy
 
     # Find reference slice for flattening

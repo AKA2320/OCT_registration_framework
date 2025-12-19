@@ -45,22 +45,41 @@ def preprocess_img(data):
     data = np.ascontiguousarray(data)
     return data
 
-def crop_data(data,surface_coords,cells_coords,max_crop_shape):
-    uncroped_data = data
+def map_coords_after_crop(coords):
+    temp_coords = coords.copy()
+    for idx in range(temp_coords.shape[0]-1):
+        if temp_coords[idx][1] > temp_coords[idx+1][0]:
+            temp_coords[idx][1] = temp_coords[idx+1][0] = int(np.mean((temp_coords[idx][1], temp_coords[idx+1][0])))
+    lengths = [s[1] - s[0] for s in temp_coords]
+    new_coords = []
+    offset = 0
+    for coord_new in np.cumsum(lengths):
+        new_coords.append([offset, coord_new])
+        offset = coord_new
+    return np.array(new_coords).astype(np.uint16)
+
+def crop_data(data, surface_coords, cells_coords, max_crop_shape):
     merged_coords = []
+    new_surface_coords = None
+    new_cell_coords = None
     if surface_coords is not None:
         surface_coords[:,0],surface_coords[:,1] = surface_coords[:,0]-30, surface_coords[:,1]+30 # 30 is for padding, makes it atleast 60 pixels for transmorph to work
         surface_coords = np.where(surface_coords<0,0,surface_coords)
         surface_coords = np.where(surface_coords>max_crop_shape,max_crop_shape-1,surface_coords)
         merged_coords.extend([*surface_coords])
+        new_surface_coords = map_coords_after_crop(surface_coords)
     if cells_coords is not None:
         cells_coords[:,0],cells_coords[:,1] = cells_coords[:,0]-30, cells_coords[:,1]+30 # 30 is for padding, makes it atleast 60 pixels for transmorph to work
         cells_coords = np.where(cells_coords<0,0,cells_coords)
         cells_coords = np.where(cells_coords>max_crop_shape,max_crop_shape-1,cells_coords)
         merged_coords.extend([*cells_coords])
+        new_cell_coords = map_coords_after_crop(cells_coords)
     merged_coords = merge_intervals([*merged_coords])
-    uncroped_data = uncroped_data[:, np.r_[tuple(np.r_[start:end] for start, end in merged_coords)], :]
-    return uncroped_data
+    # print("surface_coords: ",new_surface_coords)
+    # print("cells_coords: ",new_cell_coords)
+    data = data[:, np.r_[tuple(np.r_[start:end] for start, end in merged_coords)], :]
+    # print(data.shape)
+    return data, new_surface_coords, new_cell_coords
 
 class CropOrPad():
     def __init__(self, target_shape: tuple):
