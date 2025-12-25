@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 import h5py
 import shutil
-from utils.transmorph_helper_funcs import preprocess_img, detect_areas, crop_data
+from utils.data_crop_funcs import preprocess_img, detect_areas, crop_data
 from utils.load_data_funcs import load_data_dcm, load_h5_data, load_bin_files
 from utils.flatten_correction_util_funcs import flatten_data
 from utils.y_correction_util_funcs import y_motion_correcting

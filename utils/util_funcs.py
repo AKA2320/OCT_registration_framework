@@ -26,18 +26,6 @@ def non_zero_crop(a,b):
     maxi = min(np.max(np.where(a[0]!=0)),np.max(np.where(b[0]!=0)))
     return mini, maxi
 
-def merge_intervals(intervals):
-    if not intervals:
-        return []
-    intervals.sort(key=lambda x: x[0])
-    merged = [intervals[0]]
-    for current in intervals[1:]:
-        last = merged[-1]
-        if current[0] <= last[1]:  # overlap
-            last[1] = max(last[1], current[1])  # merge
-        else:
-            merged.append(current)
-    return merged
 
 def warp_image_affine(image, shifts):
     mat = np.float32([[1, 0, -shifts[0]], [0, 1, -shifts[1]]])

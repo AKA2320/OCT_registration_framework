@@ -3,7 +3,7 @@ from pydicom import dcmread
 from natsort import natsorted
 import os
 from utils.util_funcs import min_max, resource_path
-from utils.transmorph_helper_funcs import preprocess_img, detect_areas
+from utils.data_crop_funcs import preprocess_img, detect_areas
 from utils.load_reconstruct_binfiles import process_file_binfiles, reconstruct_frames, load_calibration, prepare_k_linearization
 import napari
 import numpy as np
@@ -144,14 +144,16 @@ def load_bin_files(path_dir, scan_num):
     k_raw, k_lin, do_flip = prepare_k_linearization(calib, SPECTROMETER_PIXELS)
     bin_files = natsorted(glob.glob(os.path.join(MAIN_FOLDER, "*.bin")))
 
-    # crop_vals = []
-    # for i in [0,50,100,150,200]:
-    #     raw_data = process_file_binfiles(bin_files[i], k_raw, k_lin, do_flip)
-    #     err_vals = [err_func_crop_val(val,raw_data) for val in range(0,120)]
-    #     print(np.min(err_vals))
-    #     crop_vals.append(np.argmin(err_vals))
-    # DEFAULT_SHIFT_VAL = int(np.mean(crop_vals))
-    # print(DEFAULT_SHIFT_VAL, crop_vals)
+    
+    '''crop_vals = []
+    for i in [0,50,100,150,200]:
+        raw_data = process_file_binfiles(bin_files[i], k_raw, k_lin, do_flip)
+        err_vals = [err_func_crop_val(val,raw_data) for val in range(0,120)]
+        print(np.min(err_vals))
+        crop_vals.append(np.argmin(err_vals))
+    DEFAULT_SHIFT_VAL = int(np.mean(crop_vals))
+    print(DEFAULT_SHIFT_VAL, crop_vals)
+    '''
     DEFAULT_SHIFT_VAL = 83
 
     if not bin_files:

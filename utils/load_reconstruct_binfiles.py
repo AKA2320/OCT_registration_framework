@@ -1,20 +1,6 @@
 import numpy as np
 from scipy import interpolate
 import os
-from natsort import natsorted
-import glob
-
-
-
-# --- TARGET GEOMETRY ---
-# DEFAULT_SHIFT_VAL = 83          # Registration Shift
-# OUTPUT_WIDTH = 417      # Target Width
-# OUTPUT_DEPTH = 1200     # Target Depth
-
-# # --- CONTRAST ---
-# # MAX_CONTRAST = np.iinfo(np.uint16).max
-# MAX_CONTRAST = 255
-
 
 def load_calibration(path):
     try:
@@ -71,7 +57,6 @@ def process_file_binfiles(file_path, k_raw, k_linear, flip_spectrum,
         spectrogram = spectrogram[:, ::-1]
 
     # K-Space Linearization
-
     f_interp = interpolate.make_interp_spline(k_raw, spectrogram, k=1, axis=1)
     spectrogram_linear = f_interp(k_linear)
 
