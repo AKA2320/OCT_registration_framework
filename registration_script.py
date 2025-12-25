@@ -8,7 +8,7 @@ from ultralytics import YOLO
 from utils.util_funcs import resource_path, download_model
 from registration_scripts.reg_worker import RegistrationWorker
 import yaml
-import torch
+# import torch
 import time
 import logging
 
@@ -39,7 +39,8 @@ class RegistrationMaster:
                                             EXPECTED_SURFACES, EXPECTED_CELLS, BATCH_FLAG, DISABLE_TQDM,
                                             ENABLE_MULTIPROC_SLURM, USE_MODEL_LATERAL_TRANSLATION, SAVE_DETECTIONS)
             logging.basicConfig(level=logging.INFO, format='%(message)s', stream = ProcessStdout(self.output_queue))
-        self.DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.DEVICE  = 'cpu'
         self.BATCH_FLAG = self.config['FLAGS']['BATCH_FLAG']
         self.DATA_LOAD_DIR = self.config['PATHS']['DATA_LOAD_DIR']
         self.DATA_SAVE_DIR = self.config['PATHS']['DATA_SAVE_DIR']
