@@ -133,7 +133,7 @@ def load_bin_files(path_dir, scan_num):
     # path_dir = 'Hadiya_7_7_2025_batch1_scan2_bin/'
     path_dir = path_dir+'/' if not path_dir.endswith('/') else path_dir
     MAIN_FOLDER = os.path.join(path_dir, 'binfiles')
-    SPECTROMETER_FILE = glob.glob(os.path.join(path_dir, '*.txt'))[0]
+    SPECTROMETER_FILE = os.path.join(path_dir, 'wavelength_calibration_spectrometer_cobra800.txt')
     # --- PROCESSING PARAMETERS ---
     # A_SCANS_RAW = 500   
     BUFFER_LINES = 1030     

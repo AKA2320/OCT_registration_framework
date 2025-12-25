@@ -17,10 +17,7 @@ import glob
 
 
 def load_calibration(path):
-    try:
-        lamda = np.loadtxt(path, usecols=0)
-    except ValueError:
-        lamda = np.loadtxt(path, usecols=0, skiprows=1)
+    lamda = np.loadtxt(path)
     return lamda
 
 def prepare_k_linearization(lamda, SPECTROMETER_PIXELS):
@@ -71,9 +68,10 @@ def process_file_binfiles(file_path, k_raw, k_linear, flip_spectrum,
         spectrogram = spectrogram[:, ::-1]
 
     # K-Space Linearization
-
     f_interp = interpolate.make_interp_spline(k_raw, spectrogram, k=1, axis=1)
     spectrogram_linear = f_interp(k_linear)
+
+
 
     # FFT with ZERO PADDING
     fft_res = np.fft.fft(spectrogram_linear, n=FFT_SIZE, axis=1)
