@@ -1353,7 +1353,7 @@ wheels = [
 ]
 
 [[package]]
-name = "oct-reg"
+name = "oct-proc"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -1361,7 +1361,6 @@ dependencies = [
     { name = "h5py" },
     { name = "maturin" },
     { name = "ml-collections" },
-    { name = "napari" },
     { name = "natsort" },
     { name = "numpy" },
     { name = "patchelf" },
@@ -1376,6 +1375,7 @@ dependencies = [
 
 [package.optional-dependencies]
 gui = [
+    { name = "napari" },
     { name = "pyside6" },
 ]
 multiproc = [
@@ -1391,7 +1391,7 @@ requires-dist = [
     { name = "h5py", specifier = ">=3.14.0" },
     { name = "maturin", specifier = ">=1.10.2" },
     { name = "ml-collections", specifier = ">=1.1.0" },
-    { name = "napari", specifier = ">=0.6.2" },
+    { name = "napari", marker = "extra == 'gui'", specifier = ">=0.6.2" },
     { name = "natsort", specifier = ">=8.4.0" },
     { name = "numpy", specifier = ">=2.3.1" },
     { name = "patchelf", specifier = ">=0.17.2.4" },

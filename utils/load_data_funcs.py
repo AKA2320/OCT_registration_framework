@@ -5,7 +5,7 @@ import os
 from utils.util_funcs import min_max, resource_path
 from utils.data_crop_funcs import preprocess_img, detect_areas
 from utils.load_reconstruct_binfiles import process_file_binfiles, reconstruct_frames, load_calibration, prepare_k_linearization
-import napari
+
 import numpy as np
 import yaml
 import glob
@@ -74,6 +74,9 @@ def GUI_load_h5(path_h5):
     return original_data
 
 def load_napari_viewer(data):
+    
+    import napari
+
     """Memory optimized napari viewer that processes crops without holding full dataset."""
     config_path = 'datapaths.yaml'
     try:
