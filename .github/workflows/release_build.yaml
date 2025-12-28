@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: '3.12'
         enable-cache: true
-
+    
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
@@ -30,6 +30,9 @@ jobs:
       uses: Swatinem/rust-cache@v2 # RUst Cache
       with:
         workspaces: "rust_bindings"
+
+    - name: Create virtual environment
+      run: uv venv
 
     - name: Install dependencies
       run: |
@@ -82,7 +85,10 @@ jobs:
       uses: Swatinem/rust-cache@v2 # RUst Cache
       with:
         workspaces: "rust_bindings"
-
+        
+    - name: Create virtual environment
+      run: uv venv
+      
     - name: Install dependencies
       run: |
         uv pip install ".[gui]"
