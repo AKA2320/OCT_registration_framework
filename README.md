@@ -231,4 +231,4 @@ Key dependencies (see `pyproject.toml` for complete list):
 - **Image Processing**: scikit-image, OpenCV
 - **GUI**: PySide6, Napari (for visualization)
 - **Data Handling**: h5py, pydicom, numpy
-- **SLURM Multiprocessing** (Command-line only): dask, dask-jobqueue
+- **SLURM Multiprocessing**: dask, dask-jobqueue

@@ -260,10 +260,11 @@ class RegistrationTab(QWidget):
     def select_registration_path(self):
         path = ""
         if self.mode == 'single':
-            path, _ = QFileDialog.getOpenFileName(self, "Select Data for Registration", "", "Supported Files (*.h5 *.hdf5 *.dcm);;All Files (*)")
-            if path and path.lower().endswith('.dcm'): path = os.path.dirname(path)
+            path, _ = QFileDialog.getOpenFileName(self, "Select Data for Registration", "", "Supported Files (*.h5 *.hdf5 *.dcm *.bin);;All Files (*)")
+            if path and path.lower().endswith(('.dcm', '.DCM')): path = os.path.dirname(path)
+            if path and path.lower().endswith('.bin'): path = os.path.dirname(os.path.dirname(path))
         else:
-            path = QFileDialog.getExistingDirectory(self, "Select Batch Directory")
+            path = QFileDialog.getExistingDirectory(self, "Select Batch Directory, Bin not supported yet")
         if path:
             self.selected_register_path = path
             self.path_display.setText(path)
