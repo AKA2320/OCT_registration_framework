@@ -33,7 +33,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --frozen --extra gui
+        uv pip install ".[gui]"
         uv pip install maturin pyinstaller
 
     - name: Run Maturin for Rust Bindings
@@ -85,7 +85,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv sync --frozen --extra gui
+        uv pip install ".[gui]"
         uv pip install pyinstaller maturin
     
     - name: Run Maturin for Rust Bindings
