@@ -10,22 +10,22 @@ on:
 
 jobs:
   build_macos:
-    runs-on: macos-latest 
+    runs-on: macos-latest
     permissions:
       contents: write
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4 
+      uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v7
       with:
-        python-version: '3.12' # Specify the Python version
-        cache: 'pip'
+        python-version: '3.12'
+        enable-cache: true
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
-    
+
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2 # RUst Cache
       with:
@@ -33,16 +33,17 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install ".[gui]"
-        pip install pyinstaller
+        uv sync --frozen --extra gui
+        uv pip install pyinstaller
 
     - name: Run Maturin for Rust Bindings
       run: |
         export LIBTORCH_USE_PYTORCH=1
         export DYLD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
 
-        maturin develop --release -m rust_bindings/Cargo.toml
+        maturin build --release -m rust_bindings/Cargo.toml
+        WHEEL_FILE=$(python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))")
+        uv pip install "${WHEEL_FILE}" --force-reinstall
 
     - name: Build with PyInstaller
       run: pyinstaller spec_files/OCT_mac_app.spec
@@ -61,18 +62,18 @@ jobs:
         path: dist/OCT_mac_app.zip # Path to the zipped executable
 
   build_windows:
-    runs-on: windows-latest 
+    runs-on: windows-latest
     permissions:
       contents: write
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4 
+      uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.12'
-        cache: 'pip'
+        enable-cache: true
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
@@ -84,16 +85,17 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install ".[gui]"
-        pip install pyinstaller
+        uv sync --frozen --extra gui
+        uv pip install pyinstaller
     
     - name: Run Maturin for Rust Bindings
       run: |
         $env:LIBTORCH_USE_PYTORCH = 1
         $env:PATH = (python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '\\Lib\\site-packages\\torch\\lib')") + ';' + $env:PATH
 
-        maturin develop --release -m rust_bindings/Cargo.toml
+        maturin build --release -m rust_bindings/Cargo.toml
+        $wheel_file = python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))"
+        uv pip install $wheel_file --force-reinstall
       
     - name: Build with PyInstaller
       run: pyinstaller spec_files/OCT_windows_app.spec
