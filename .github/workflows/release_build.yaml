@@ -41,9 +41,9 @@ jobs:
         export LIBTORCH_USE_PYTORCH=1
         export DYLD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
 
-        maturin build --release -m rust_bindings/Cargo.toml
-        WHEEL_FILE=$(python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))")
-        uv pip install "${WHEEL_FILE}" --force-reinstall
+        maturin build --release --out dist -m rust_bindings/Cargo.toml
+        WHEEL_FILE=$(ls dist/*.whl | head -1)
+        uv pip install "$WHEEL_FILE"
 
     - name: Build with PyInstaller
       run: pyinstaller spec_files/OCT_mac_app.spec
@@ -93,9 +93,9 @@ jobs:
         $env:LIBTORCH_USE_PYTORCH = 1
         $env:PATH = (python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '\\Lib\\site-packages\\torch\\lib')") + ';' + $env:PATH
 
-        maturin build --release -m rust_bindings/Cargo.toml
-        $wheel_file = python -c "import glob, os; print(os.path.abspath(glob.glob('rust_bindings/target/wheels/*.whl')[0]))"
-        uv pip install $wheel_file --force-reinstall
+        maturin build --release --out dist -m rust_bindings/Cargo.toml
+        $wheel_file = Get-ChildItem dist/*.whl | Select-Object -First 1 -ExpandProperty FullName
+        uv pip install $wheel_file
       
     - name: Build with PyInstaller
       run: pyinstaller spec_files/OCT_windows_app.spec
