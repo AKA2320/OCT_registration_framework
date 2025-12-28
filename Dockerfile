@@ -22,8 +22,9 @@ RUN pip install --upgrade pip && \
 COPY rust_bindings/ ./rust_bindings/
 WORKDIR /rust_bindings
 RUN export LIBTORCH_USE_PYTORCH=1 && \
-    maturin develop --release && \
-    cargo clean
+    maturin build --release --auditwheel skip --out dist && \
+    WHEEL_FILE=$(ls dist/*.whl | head -1) && \
+    uv pip install "$WHEEL_FILE"
 
 COPY pyproject.toml ./
 COPY registration_scripts/ ./registration_scripts/
