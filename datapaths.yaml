@@ -1,5 +1,5 @@
 PATHS:
-  DATA_LOAD_DIR: 'data/'
+  DATA_LOAD_DIR: '/Users/akapatil/Documents/OCT/Bifocal registration/pic3_Healthy_8192/data/'
   DATA_SAVE_DIR: 'output/'
   MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
   MODEL_X_TRANSLATION_PATH: 'models/transmorph_lateral_X_translation.pt'

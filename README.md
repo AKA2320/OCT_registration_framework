@@ -197,6 +197,31 @@ pip install ".[multiproc]"  # Using pip
 uv pip install ".[multiproc]"  # Using uv (faster)
 ```
 
+### Using Docker
+
+The framework is also available as a Docker image, allowing you to run the OCT processing without installing Python dependencies or building Rust extensions.
+
+1. **Pull the Docker image:**
+   ```shell
+   docker pull ghcr.io/aka2320/oct_processing_framework:latest
+   ```
+
+2. **Prepare datapaths.yaml:**
+   - Copy the `datapaths.yaml` file from the repository to your local machine.
+   - Edit the file to set your local paths. The `DATA_LOAD_DIR` should be set to `'data/'` and `DATA_SAVE_DIR` to `'output/'` (these correspond to the mounted volumes in the container).
+   - Adjust other parameters as needed (see the Command-Line Scripts section above for details).
+
+3. **Run the Docker container:**
+   ```shell
+   docker run -v /path/to/your/datapaths.yaml:/app/datapaths.yaml -v "/path/to/your/data_directory":/app/data -v "/path/to/your/output_directory":/app/output ghcr.io/aka2320/oct_processing_framework:latest
+   ```
+   
+   - Replace `/path/to/your/datapaths.yaml` with the path to your edited datapaths.yaml file.
+   - Replace `/path/to/your/data_directory` with the path to your OCT data directory.
+   - Replace `/path/to/your/output_directory` with the path where you want the processed results saved.
+   
+   The Docker image includes all necessary models and dependencies. The processing will use the configuration specified in your mounted datapaths.yaml file.
+
 ### Download
 
 Standalone applications are available for download from our [GitHub Releases](https://github.com/AKA2320/OCT_registration_framework/releases) page. Look for the latest release and download the appropriate file for your operating system:

@@ -85,7 +85,7 @@ jobs:
       uses: Swatinem/rust-cache@v2 # RUst Cache
       with:
         workspaces: "rust_bindings"
-        
+
     - name: Create virtual environment
       run: uv venv
       
@@ -147,7 +147,7 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         # Hardcoded to latest only
-        tags: ghcr.io/aka2320/oct_registration_framework:latest
+        tags: ghcr.io/aka2320/oct_processing_framework:latest
         # Caching
         cache-from: type=gha
         cache-to: type=gha,mode=max
