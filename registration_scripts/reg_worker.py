@@ -77,15 +77,14 @@ class RegistrationWorker:
             self.pbar.set_description(desc = f'Cropping data for {self.scan_num}')
             cropped_data = self._detect_features_crop_data(original_data)
             if cropped_data is None:
-                return None
+                raise ValueError("Data Cropping returned None, data has no features or has low contrast")
             del original_data  # Free memory, we now only use cropped_data
             # Save unregistered data
             self._save_data(cropped_data, '_unregistered')
 
             # Get surface coordinates
             if self.surface_coords is None:
-                logging.warning(f'No surface detected in cropped data, cropping error: {self.scan_num}')
-                return None
+                raise ValueError(f'No surface detected in cropped data, cropping error: {self.scan_num}')
             self.partition_coord = self._get_partition_coords_cropped()
 
             # Data processing pipeline

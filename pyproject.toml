@@ -9,7 +9,6 @@ dependencies = [
     "h5py>=3.14.0",
     "maturin>=1.10.2",
     "ml-collections>=1.1.0",
-    "napari>=0.6.2",
     "natsort>=8.4.0",
     "numpy>=2.3.1",
     "patchelf>=0.17.2.4",
@@ -29,6 +28,7 @@ multiproc = [
 ]
 gui = [
     "pyside6>=6.9.1",
+    "napari>=0.6.2",
 ]
 
 [tool.setuptools]

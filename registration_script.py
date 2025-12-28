@@ -100,7 +100,7 @@ class RegistrationMaster:
             logging.info("YOLO Model Loaded Succesfully.")
         except Exception as e:
             logging.error(f"Error loading YOLO model: {e}", exc_info=True)
-            sys.exit("Failed to load YOLO model. Exiting.")
+            raise FileNotFoundError(f"Failed to load YOLO model {e}. Exiting.")
         if self.USE_MODEL_LATERAL_TRANSLATION:
             try:
                 if not os.path.exists(self.MODEL_X_TRANSLATION_PATH):
@@ -111,6 +111,7 @@ class RegistrationMaster:
                 # MODEL_X_TRANSLATION.eval()
                 # logging.info("Model X loaded successfully.")  
                 MODEL_X_TRANSLATION = self.MODEL_X_TRANSLATION_PATH
+                logging.info(f"Model X at {MODEL_X_TRANSLATION}.")  
             except Exception as e:
                 logging.error(f"Error loading Model X: {e}", exc_info=True)
                 logging.info("Proceeding without Model X translation.")  
@@ -139,6 +140,7 @@ class RegistrationMaster:
                     raise FileNotFoundError("Missing data, make sure its formatted according to README")
         elif self.BATCH_FLAG:
             scans = [i for i in os.listdir(self.DATA_LOAD_DIR) if (i.startswith('scan'))]
+            if not scans: raise FileNotFoundError("Missing data, folder needs scan folders inside, make sure its formatted according to README")
             scans = natsorted(scans)
             first_path = os.listdir(os.path.join(self.DATA_LOAD_DIR,scans[0]))[0]
             if first_path.endswith('.h5'):
@@ -146,21 +148,19 @@ class RegistrationMaster:
             elif first_path.endswith(('.dcm', '.DCM')):
                 self.data_type = 'dcm'
             else:
-                self.data_type = 'bin'
-
+                # self.data_type = 'bin'
+                raise FileNotFoundError("Missing data, make sure its formatted according to README. \n Bin files not supported with Batch Flag")
+            
         pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable = self.DISABLE_TQDM)
         if not self.ENABLE_MULTIPROC_SLURM:
             for scan_num in pbar:
                 pbar.set_description(desc = f'Processing {scan_num}')
                 start = time.time()
                 self._launch_process_wrapper(scan_num, pbar)
-                # scan_worker = RegistrationWorker()
-                # scan_worker.process_scan()
                 logging.info(f'Time taken: {time.time() - start:.2f} seconds')
 
         elif self.ENABLE_MULTIPROC_SLURM:
             self.DISABLE_TQDM = True
-            # pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable = self.DISABLE_TQDM)
             self._dask_slurm_spawner(scans)
 
     def init_dask_worker(self):

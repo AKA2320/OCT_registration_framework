@@ -1,5 +1,4 @@
 import multiprocessing
-multiprocessing.freeze_support()
 import sys
 import os
 # import logging
@@ -20,7 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QThread, Signal
 from utils.load_data_funcs import GUI_load_h5, GUI_load_dcm, load_napari_viewer
 from registration_scripts.gui_reg_process_wrapper import run_registration_process
-
+multiprocessing.freeze_support()
 
 # =============================================================================
 # Worker Threads
@@ -177,7 +176,6 @@ class LoadTab(QWidget):
         if self.visualize_checkbox.isChecked():
             self.update_status.emit("Visualizing with napari...")
             load_napari_viewer(data)
-            # napari.view_image(data)
             self.update_status.emit("Visualization complete.")
         else:
             QMessageBox.information(self, "Load Complete", f"Data loaded successfully with shape: {data.shape}")
@@ -262,10 +260,11 @@ class RegistrationTab(QWidget):
     def select_registration_path(self):
         path = ""
         if self.mode == 'single':
-            path, _ = QFileDialog.getOpenFileName(self, "Select Data for Registration", "", "Supported Files (*.h5 *.hdf5 *.dcm);;All Files (*)")
-            if path and path.lower().endswith('.dcm'): path = os.path.dirname(path)
+            path, _ = QFileDialog.getOpenFileName(self, "Select Data for Registration", "", "Supported Files (*.h5 *.hdf5 *.dcm *.bin);;All Files (*)")
+            if path and path.lower().endswith(('.dcm', '.DCM')): path = os.path.dirname(path)
+            if path and path.lower().endswith('.bin'): path = os.path.dirname(os.path.dirname(path))
         else:
-            path = QFileDialog.getExistingDirectory(self, "Select Batch Directory")
+            path = QFileDialog.getExistingDirectory(self, "Select Batch Directory, Bin not supported yet")
         if path:
             self.selected_register_path = path
             self.path_display.setText(path)
