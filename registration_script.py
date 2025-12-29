@@ -8,7 +8,6 @@ from ultralytics import YOLO
 from utils.util_funcs import resource_path, download_model
 from registration_scripts.reg_worker import RegistrationWorker
 import yaml
-# import torch
 import time
 import logging
 
