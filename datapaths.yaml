@@ -1,8 +1,8 @@
 PATHS:
-  DATA_LOAD_DIR: 'data/'
-  DATA_SAVE_DIR: 'output/'
+  DATA_LOAD_DIR: 'data/' # keep this as data/ if using docker image
+  DATA_SAVE_DIR: 'output/' # keep this as output/ if using docker image
   MODEL_FEATURE_DETECT_PATH: 'models/feature_detect_yolov12best.pt'
-  MODEL_X_TRANSLATION_PATH: 'models/transmorph_lateral_X_translation.pt'
+  MODEL_X_TRANSLATION_PATH: 'models/transmorph_lateral_X_translation.pt' # not present in docker image, can be downloaded and mounted, else the code will download it for you everytime you run the image.
 
 VALUES:
   EXPECTED_SURFACES: 3 # Estimated Surface layers in scans
