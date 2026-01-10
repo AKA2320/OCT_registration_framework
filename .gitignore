@@ -213,3 +213,4 @@ model_transmorph_LRNPOSEMBD_Large_onlyX_batch32_normalized_shiftrange10_dynamicc
 model_transmorph_LRNPOSEMBD_Large_onlyX_batch32_ncc_normalized_shiftrange3_dynamiccrop_onlyMSE.pt
 profile.html
 profile.json
+old_models/

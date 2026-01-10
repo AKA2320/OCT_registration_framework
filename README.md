@@ -6,11 +6,19 @@ This project provides a comprehensive framework for performing processing of Opt
 
 Standalone applications for macOS and Windows are also available for download from our GitHub releases, providing a convenient way to use the framework without installing Python or other dependencies.
 
+### Preview
+
+<img src="gui_images/GUI%20Tab.png" width="70%" alt="Application Interface">
+
+| **Before Registration** | **After Registration** |
+|------------------------|------------------------|
+| <img src="gui_images/OCT_unreg.png" width="100%"> | <img src="gui_images/OCT_reg.png" width="100%"> |
+
 ## Key Features
 
-*   **Feature Detection:** Employs state-of-the-art YOLO models for detecting anatomical features and structures in OCT images
-*   **Multi-dimensional Motion Correction:** Corrects for motion artifacts in X, Y, and Z (flattening) directions
-*   **Deep Learning Integration:** Utilizes Swin Transformer-based "TransMorph" models for advanced registration tasks
+*   **Feature Detection:** Employs YOLO model for detecting features, structures and remove anomalies in OCT images
+*   **Multi-dimensional Motion Correction:** Corrects motion in X, Y, and Z (flattening) directions
+*   **Deep Learning Integration:** Utilizes Swin Transformer-based "TransMorph" model for registration
 *   **Flexible Configuration:** GUI allows real-time configuration of processing parameters; command-line interface uses YAML configuration files
 *   **Dual Interface:** Provides both GUI (PySide6) and command-line interfaces for different use cases
 *   **Multi-format Support:** Supports `.h5` and `.dcm` OCT data formats
@@ -19,7 +27,12 @@ Standalone applications for macOS and Windows are also available for download fr
 
 ## Installation
 
-**Prerequisites:** This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
+**Prerequisites:**
+- This project requires Python 3.12. Please ensure you have Python 3.12 installed before proceeding.
+- Rust (latest stable version) is required for building performance-critical extensions. Please install Rust using the instructions at https://rustup.rs or via your package manager.
+  - **macOS:** Install Xcode Command Line Tools with `xcode-select --install`
+  - **Linux:** Install build-essential, clang (e.g., on Ubuntu: `sudo apt install build-essential clang`)
+  - **Windows:** Install Visual Studio Build Tools (for MSVC) or MinGW (for GNU) if not already installed.
 
 ### Quick Setup
 
@@ -36,7 +49,42 @@ Standalone applications for macOS and Windows are also available for download fr
     # .venv\Scripts\activate   # On Windows
     ```
 
-3.  **Install the package:**
+3.  **Install Python dependencies (required for Rust build):**
+    ```shell
+    # Install core dependencies including PyTorch and maturin
+    pip install torch==2.9.0
+    pip install maturin patchelf
+    ```
+
+4.  **Building Rust extensions (required):**
+
+    Set up environment variables for LibTorch linking (platform-specific):
+
+    **macOS:**
+    ```shell
+    export LIBTORCH_USE_PYTORCH=1
+    export DYLD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
+    ```
+
+    **Linux:**
+    ```shell
+    export LIBTORCH_USE_PYTORCH=1
+    export LD_LIBRARY_PATH=$(python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$LD_LIBRARY_PATH
+    ```
+
+    **Windows (PowerShell):**
+    ```powershell
+    $env:LIBTORCH_USE_PYTORCH = 1
+    $env:PATH = (python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '\\Lib\\site-packages\\torch\\lib')") + ';' + $env:PATH
+    ```
+
+    Then build and install the Rust extension:
+    ```shell
+    # Build the Rust extension with maturin
+    maturin develop --release -m rust_bindings/Cargo.toml
+    ```
+
+5.  **Install the package:**
     
     **Option A: Using pip (standard)**
     ```shell
@@ -75,8 +123,8 @@ The GUI provides a user-friendly interface with three main tabs for different wo
 - Visualize data using the integrated Napari viewer
 - Supports both single volume and directory-based loading
 
-#### 2. Register Data Tab
-- Register individual OCT volumes
+#### 2. Process Data Tab
+- Process individual OCT volumes
 - Configure processing parameters in real-time:
   - Expected Cells: Number of cell layers to detect (default: 2)
   - Expected Surfaces: Number of surfaces to detect (default: 2)
@@ -84,22 +132,27 @@ The GUI provides a user-friendly interface with three main tabs for different wo
   - Save Feature Detections: Save annotated images of the detected features
 - Cancel long-running registration processes using the Cancel button
 
-#### 3. Batch Register Data Tab
+#### 3. Batch Process Data Tab
 - Process multiple OCT volumes in batch mode
 - Same configurable parameters as single registration
 - Process entire directories of `.h5` files
 
 To use the GUI:
 
-1.  **Prepare your OCT data:**
+1.  **Install GUI dependencies (if not already installed):**
+    ```shell
+    pip install ".[gui]"
+    ```
+
+2.  **Prepare your OCT data:**
     *   Ensure your `.h5` or `.dcm` files are organized in accessible directories
 
-2.  **Launch the GUI:**
+3.  **Launch the GUI:**
     ```shell
     python pyside_gui.py
     ```
 
-3.  **Configure through the interface:**
+4.  **Configure through the interface:**
     *   Select input data directory
     *   Specify output save directory
     *   Adjust processing parameters as needed
@@ -144,6 +197,31 @@ pip install ".[multiproc]"  # Using pip
 uv pip install ".[multiproc]"  # Using uv (faster)
 ```
 
+### Using Docker
+
+The framework is also available as a Docker image, allowing you to run the OCT processing without installing Python dependencies or building Rust extensions.
+
+1. **Pull the Docker image:**
+   ```shell
+   docker pull ghcr.io/aka2320/oct_processing_framework:latest
+   ```
+
+2. **Prepare datapaths.yaml:**
+   - Copy the `datapaths.yaml` file from the repository to your local machine.
+   - Edit the file to set your local paths. The `DATA_LOAD_DIR` should be set to `'data/'` and `DATA_SAVE_DIR` to `'output/'` (these correspond to the mounted volumes in the container).
+   - Adjust other parameters as needed (see the Command-Line Scripts section above for details).
+
+3. **Run the Docker container:**
+   ```shell
+   docker run -v /path/to/your/datapaths.yaml:/app/datapaths.yaml -v "/path/to/your/data_directory":/app/data -v "/path/to/your/output_directory":/app/output ghcr.io/aka2320/oct_processing_framework:latest
+   ```
+   
+   - Replace `/path/to/your/datapaths.yaml` with the path to your edited datapaths.yaml file.
+   - Replace `/path/to/your/data_directory` with the path to your OCT data directory.
+   - Replace `/path/to/your/output_directory` with the path where you want the processed results saved.
+   
+   The Docker image includes all necessary models and dependencies. The processing will use the configuration specified in your mounted datapaths.yaml file.
+
 ### Download
 
 Standalone applications are available for download from our [GitHub Releases](https://github.com/AKA2320/OCT_registration_framework/releases) page. Look for the latest release and download the appropriate file for your operating system:
@@ -173,8 +251,9 @@ The `models/` directory contains pre-trained models:
 
 ## Dependencies
 Key dependencies (see `pyproject.toml` for complete list):
+- **Performance Extensions**: Rust (for optimized motion correction algorithms)
 - **Deep Learning**: PyTorch
 - **Image Processing**: scikit-image, OpenCV
 - **GUI**: PySide6, Napari (for visualization)
 - **Data Handling**: h5py, pydicom, numpy
-- **SLURM Multiprocessing** (Command-line only): dask, dask-jobqueue
+- **SLURM Multiprocessing**: dask, dask-jobqueue

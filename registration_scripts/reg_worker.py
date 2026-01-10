@@ -1,15 +1,14 @@
 import numpy as np
 import os
-from skimage.transform import warp, AffineTransform
 from tqdm import tqdm
 import h5py
 import shutil
-from utils.transmorph_helper_funcs import preprocess_img, detect_areas, crop_data
-from utils.load_data_funcs import load_data_dcm, load_h5_data
+from utils.data_crop_funcs import preprocess_img, detect_areas, crop_data
+from utils.load_data_funcs import load_data_dcm, load_h5_data, load_bin_files
 from utils.flatten_correction_util_funcs import flatten_data
 from utils.y_correction_util_funcs import y_motion_correcting
 from utils.x_correction_util_funcs import x_motion_correction
-from utils.util_funcs import ncc
+from utils.util_funcs import ncc, warp_image_affine
 import gc
 import logging
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout )
@@ -31,7 +30,7 @@ class RegistrationWorker:
                 EXPECTED_SURFACES, EXPECTED_CELLS):
         self.config = config
         self.MODEL_FEATURE_DETECT = models['feature_yolo']
-        self.MODEL_X_TRANSLATION = models['x_translation']
+        self.MODEL_X_TRANSLATION_PATH = models['x_translation']
         self.scan_num = scan_num
         self.pbar = pbar
         self.DATA_LOAD_DIR = DATA_LOAD_DIR
@@ -58,8 +57,12 @@ class RegistrationWorker:
             if not os.path.exists(self.DATA_LOAD_DIR):
                 raise FileNotFoundError(f"Directory {self.DATA_LOAD_DIR} not found")
             return load_data_dcm(self.DATA_LOAD_DIR, self.scan_num)
+        elif self.data_type == 'bin':
+            if not os.path.exists(self.DATA_LOAD_DIR):
+                raise FileNotFoundError(f"Directory {self.DATA_LOAD_DIR} not found")
+            return load_bin_files(self.DATA_LOAD_DIR, self.scan_num)
         else:
-            raise ValueError("Unsupported data type. Use 'h5' or 'dcm'.")
+            raise ValueError("Unsupported data type. Use 'h5' or 'dcm' or 'bin'.")
     
     def process_scan(self):
         """Process a single scan through the full registration pipeline"""
@@ -74,16 +77,15 @@ class RegistrationWorker:
             self.pbar.set_description(desc = f'Cropping data for {self.scan_num}')
             cropped_data = self._detect_features_crop_data(original_data)
             if cropped_data is None:
-                return None
+                raise ValueError("Data Cropping returned None, data has no features or has low contrast")
             del original_data  # Free memory, we now only use cropped_data
             # Save unregistered data
             self._save_data(cropped_data, '_unregistered')
 
             # Get surface coordinates
-            self.surface_coords, self.partition_coord = self._get_surface_coords_cropped(cropped_data)
             if self.surface_coords is None:
-                logging.warning(f'No surface detected in cropped data, cropping error: {self.scan_num}')
-                return None
+                raise ValueError(f'No surface detected in cropped data, cropping error: {self.scan_num}')
+            self.partition_coord = self._get_partition_coords_cropped()
 
             # Data processing pipeline
             cropped_data = self._process_data_pipeline(cropped_data)
@@ -107,17 +109,17 @@ class RegistrationWorker:
                 shutil.rmtree(os.path.join(detections_save_dir,self.scan_num))
             except OSError as e:
                 print(f"Error removing existing detection directory: {e}")
-        res_surface_cells = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=self.save_detections,
+        _res_surface_cells = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=self.save_detections,
                                                             max_det = self.EXPECTED_SURFACES + self.EXPECTED_CELLS + 5, # some extra detctions to save but not use
                                                             project = detections_save_dir, name=self.scan_num, verbose=False,
                                                             classes= 0, device=self.DEVICE, agnostic_nms=True, augment=True)
         
         res_surface = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=False, max_det = self.EXPECTED_SURFACES,
-                                                              verbose=False, classes = 0, device=self.DEVICE, agnostic_nms=True, augment=True)
+                                                        verbose=False, classes = 0, device=self.DEVICE, agnostic_nms=True, augment=True)
         # surface_crop_coords = [i for i in res_surface_cells[0].summary() if i['name']=='surface']
 
         res_cells = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=False, max_det = self.EXPECTED_CELLS,
-                                                        verbose=False, classes = 1, device=self.DEVICE, agnostic_nms=True, augment=True)
+                                                    verbose=False, classes = 1, device=self.DEVICE, agnostic_nms=True, augment=True)
         # cells_crop_coords = [i for i in res_surface_cells[0].summary() if i['name']=='cells']
         
         surface_crop_coords = detect_areas(res_surface[0].summary(), pad_val = self.SURFACE_Y_PAD,
@@ -127,29 +129,29 @@ class RegistrationWorker:
         if surface_crop_coords is None:
             logging.warning(f'No surface detected in orignal data for cropping: {self.scan_num}')
             return None
-        return crop_data(original_data, surface_crop_coords, cells_crop_coords, original_data.shape[1])
+        cropped_data, self.surface_coords, self.cell_coords = crop_data(original_data, surface_crop_coords, cells_crop_coords, original_data.shape[1])
+        return cropped_data
 
-    def _get_surface_coords_cropped(self, cropped_data):
+    def _get_partition_coords_cropped(self):
         """Get surface coordinates and partition coordinates from cropped data"""
-        static_flat = np.argmax(np.sum(cropped_data[:,:,:], axis=(0,1)))
-        test_detect_img = preprocess_img(cropped_data[:,:,static_flat])
+        # static_flat = np.argmax(np.sum(cropped_data[:,:,:], axis=(0,1)))
+        # test_detect_img = preprocess_img(cropped_data[:,:,static_flat])
+
+        # res_surface = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=False, verbose=False, max_det = self.EXPECTED_SURFACES,
+        #                                                 classes=0, device=self.DEVICE, agnostic_nms=True, augment=True)
         
-        res_surface = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=False, verbose=False, max_det = self.EXPECTED_SURFACES,
-                                                        classes=0, device=self.DEVICE, agnostic_nms=True, augment=True)
+        # surface_coords = detect_areas(res_surface[0].summary(), pad_val = self.SURFACE_Y_PAD,
+        #                             img_shape= test_detect_img.shape[0], expected_num = self.EXPECTED_SURFACES)
         
-        surface_coords = detect_areas(res_surface[0].summary(), pad_val = self.SURFACE_Y_PAD,
-                                    img_shape= test_detect_img.shape[0], expected_num = self.EXPECTED_SURFACES)
-        
-        if surface_coords is None:
-            return None
-            
+        # if surface_coords is None:
+        #     return None
         if self.EXPECTED_SURFACES > 1:
             # We only flatten/correct Y motion in standard interference
             # partition_coord tells us where to split the data
-            partition_coord = np.ceil(np.mean(np.mean(surface_coords[-2:], axis=1))).astype(int) 
+            partition_coord = np.ceil(np.mean(np.mean(self.surface_coords[-2:], axis=1))).astype(int) 
         else:
             partition_coord = None
-        return surface_coords, partition_coord
+        return partition_coord
 
     def _process_data_pipeline(self, cropped_data):
         """Memory optimized processing pipeline with explicit cleanup."""
@@ -243,22 +245,22 @@ class RegistrationWorker:
             valid_args = np.squeeze(np.argwhere(errs>0.7))
             for i in range(surface_coords_for_x.shape[0]):
                 val = np.argmax(np.sum(np.max(data[:,surface_coords_for_x[i,0]:surface_coords_for_x[i,1],:], axis=0), axis=1))
-                enface_extraction_rows.append(surface_coords_for_x[i,0]+val)
+                enface_extraction_rows.append(surface_coords_for_x[i,0]+val) # val is argmax so always u32 and surface_coords_for_x is u32 check detect_areas()
         else:
             valid_args = np.arange(data.shape[0])
 
         tr_all = x_motion_correction(data, cells_coords_for_x, valid_args, enface_extraction_rows,
-                            self.DISABLE_TQDM, self.scan_num, self.MODEL_X_TRANSLATION)
+                            self.DISABLE_TQDM, self.scan_num, self.MODEL_X_TRANSLATION_PATH )
         
         for i in tqdm(range(1, data.shape[0], 2),desc='X-motion warping',
                       disable=self.DISABLE_TQDM,ascii="░▖▘▝▗▚▞█", leave=False):
-            data[i] = warp(data[i], AffineTransform(matrix=tr_all[i]), order=3)
+            data[i] = warp_image_affine(data[i], (tr_all[i, 0, 2], 0))
         return data
 
     def _save_data(self, data, suffix=''):
         """Save processed data to HDF5 file"""
-        if data.dtype != np.float64:
-            data = data.astype(np.float64)
+        if data.dtype != np.float32:
+            data = data.astype(np.float32)
         folder_save = self.DATA_SAVE_DIR
         if not folder_save.endswith('/'):
             folder_save = folder_save + '/'

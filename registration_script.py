@@ -1,19 +1,13 @@
 import sys
 import multiprocessing
 multiprocessing.freeze_support()
-# import matplotlib.pylab as plt
-# import numpy as np
 import os
-# from skimage.transform import warp, AffineTransform
 from natsort import natsorted
 from tqdm import tqdm
-# import h5py
-# import shutil
 from ultralytics import YOLO
 from utils.util_funcs import resource_path, download_model
 from registration_scripts.reg_worker import RegistrationWorker
 import yaml
-import torch
 import time
 import logging
 
@@ -44,7 +38,8 @@ class RegistrationMaster:
                                             EXPECTED_SURFACES, EXPECTED_CELLS, BATCH_FLAG, DISABLE_TQDM,
                                             ENABLE_MULTIPROC_SLURM, USE_MODEL_LATERAL_TRANSLATION, SAVE_DETECTIONS)
             logging.basicConfig(level=logging.INFO, format='%(message)s', stream = ProcessStdout(self.output_queue))
-        self.DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.DEVICE  = 'cpu'
         self.BATCH_FLAG = self.config['FLAGS']['BATCH_FLAG']
         self.DATA_LOAD_DIR = self.config['PATHS']['DATA_LOAD_DIR']
         self.DATA_SAVE_DIR = self.config['PATHS']['DATA_SAVE_DIR']
@@ -102,29 +97,23 @@ class RegistrationMaster:
         try:
             models['feature_yolo'] = YOLO(self.MODEL_FEATURE_DETECT_PATH)
             logging.info("YOLO Model Loaded Succesfully.")
-            # if self.is_gui_flag:
-            #     self.output_queue.put("YOLO Model Loaded Succesfully.\n")
         except Exception as e:
             logging.error(f"Error loading YOLO model: {e}", exc_info=True)
-            sys.exit("Failed to load YOLO model. Exiting.")
+            raise FileNotFoundError(f"Failed to load YOLO model {e}. Exiting.")
         if self.USE_MODEL_LATERAL_TRANSLATION:
             try:
                 if not os.path.exists(self.MODEL_X_TRANSLATION_PATH):
-                    logging.info("Model X not present in models.....Downloading the model.")
-                    # if self.is_gui_flag:
-                    #     self.output_queue.put("Model X not present in models/ \n Downloading the model.\n")     
+                    logging.info("Model X not present in models.....Downloading the model.")  
                     download_model(model_x_translation_url,self.MODEL_X_TRANSLATION_PATH)
                     logging.info("Model Downloaded Succesfully.")
-                MODEL_X_TRANSLATION = torch.load(self.MODEL_X_TRANSLATION_PATH, map_location=self.DEVICE, weights_only=False)
-                MODEL_X_TRANSLATION.eval()
-                logging.info("Model X loaded successfully.")
-                # if self.is_gui_flag:
-                #     self.output_queue.put("Model X loaded successfully.\n")     
+                # MODEL_X_TRANSLATION = torch.jit.load(self.MODEL_X_TRANSLATION_PATH, map_location=self.DEVICE)
+                # MODEL_X_TRANSLATION.eval()
+                # logging.info("Model X loaded successfully.")  
+                MODEL_X_TRANSLATION = self.MODEL_X_TRANSLATION_PATH
+                logging.info(f"Model X at {MODEL_X_TRANSLATION}.")  
             except Exception as e:
                 logging.error(f"Error loading Model X: {e}", exc_info=True)
-                logging.info("Proceeding without Model X translation.")
-                # if self.is_gui_flag:
-                #     self.output_queue.put("Error loading Model X: {e} \nProceeding without Model X translation.")     
+                logging.info("Proceeding without Model X translation.")  
                 MODEL_X_TRANSLATION = None
         else:
             MODEL_X_TRANSLATION = None
@@ -139,31 +128,38 @@ class RegistrationMaster:
             if self.DATA_LOAD_DIR.lower().endswith('.h5'):
                 self.data_type = 'h5'
                 scans = [self.DATA_LOAD_DIR.split('/')[-1].removesuffix('.h5')]
-            else:
+            elif os.listdir(self.DATA_LOAD_DIR)[0].endswith(('.dcm','.DCM')):
                 self.data_type = 'dcm'
                 scans = [self.DATA_LOAD_DIR.split('/')[-1]]
+            else:
+                if "binfiles" in os.listdir(self.DATA_LOAD_DIR):
+                    self.data_type = 'bin'
+                    scans = [self.DATA_LOAD_DIR.split('/')[-1]]
+                else:
+                    raise FileNotFoundError("Missing data, make sure its formatted according to README")
         elif self.BATCH_FLAG:
             scans = [i for i in os.listdir(self.DATA_LOAD_DIR) if (i.startswith('scan'))]
+            if not scans: raise FileNotFoundError("Missing data, folder needs scan folders inside, make sure its formatted according to README")
             scans = natsorted(scans)
             first_path = os.listdir(os.path.join(self.DATA_LOAD_DIR,scans[0]))[0]
             if first_path.endswith('.h5'):
                 self.data_type = 'h5'
-            else:
+            elif first_path.endswith(('.dcm', '.DCM')):
                 self.data_type = 'dcm'
-
+            else:
+                # self.data_type = 'bin'
+                raise FileNotFoundError("Missing data, make sure its formatted according to README. \n Bin files not supported with Batch Flag")
+            
         pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable = self.DISABLE_TQDM)
         if not self.ENABLE_MULTIPROC_SLURM:
             for scan_num in pbar:
                 pbar.set_description(desc = f'Processing {scan_num}')
                 start = time.time()
                 self._launch_process_wrapper(scan_num, pbar)
-                # scan_worker = RegistrationWorker()
-                # scan_worker.process_scan()
                 logging.info(f'Time taken: {time.time() - start:.2f} seconds')
 
         elif self.ENABLE_MULTIPROC_SLURM:
             self.DISABLE_TQDM = True
-            # pbar = tqdm(scans, desc='Processing Scans',total = len(scans), ascii="░▖▘▝▗▚▞█", disable = self.DISABLE_TQDM)
             self._dask_slurm_spawner(scans)
 
     def init_dask_worker(self):
