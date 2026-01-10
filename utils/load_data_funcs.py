@@ -157,20 +157,15 @@ def load_bin_files(path_dir, scan_num):
 
     if not bin_files:
         raise FileNotFoundError("No bin files found.")
-    else:
-        logging.info(f"Processing {len(bin_files)} files...")
-        volume_stack = []
-        
-        for i, fpath in enumerate(bin_files):
-            raw_data = process_file_binfiles(fpath, k_raw, k_lin, do_flip,
-                                             BUFFER_LINES, SPECTROMETER_PIXELS, FFT_SIZE)
-            f1, f2, = reconstruct_frames(raw_data, DEFAULT_SHIFT_VAL)
-            volume_stack.append(f1)
-            volume_stack.append(f2)
-            
-            # if i % 50 == 0:
-            #     print(f"Processed {i}/{len(bin_files)}")
-
-        vol_3d = np.array(volume_stack)
-        # print(f"Final Volume Shape: {vol_3d.shape}")
-        return vol_3d[:,50:-50,:].astype(np.float32) # remove 50 pixels from top and bottom to avoid bottom refleaction artifacts
+    
+    logging.info(f"Processing {len(bin_files)} files...")
+    volume_stack = []
+    for i, fpath in enumerate(bin_files):
+        raw_data = process_file_binfiles(fpath, k_raw, k_lin, do_flip,
+                                            BUFFER_LINES, SPECTROMETER_PIXELS, FFT_SIZE)
+        f1, f2, = reconstruct_frames(raw_data, DEFAULT_SHIFT_VAL)
+        volume_stack.append(f1)
+        volume_stack.append(f2)
+    vol_3d = np.array(volume_stack)
+    # print(f"Final Volume Shape: {vol_3d.shape}")
+    return vol_3d[:,50:-50,:].astype(np.float32) # remove 50 pixels from top and bottom to avoid bottom refleaction artifacts

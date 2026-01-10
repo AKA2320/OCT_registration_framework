@@ -1,4 +1,5 @@
 import multiprocessing
+multiprocessing.freeze_support()
 import sys
 import os
 # import logging
@@ -19,7 +20,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QThread, Signal
 from utils.load_data_funcs import GUI_load_h5, GUI_load_dcm, load_napari_viewer
 from registration_scripts.gui_reg_process_wrapper import run_registration_process
-multiprocessing.freeze_support()
+
 
 # =============================================================================
 # Worker Threads
