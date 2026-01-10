@@ -134,17 +134,6 @@ class RegistrationWorker:
 
     def _get_partition_coords_cropped(self):
         """Get surface coordinates and partition coordinates from cropped data"""
-        # static_flat = np.argmax(np.sum(cropped_data[:,:,:], axis=(0,1)))
-        # test_detect_img = preprocess_img(cropped_data[:,:,static_flat])
-
-        # res_surface = self.MODEL_FEATURE_DETECT.predict(test_detect_img, iou=0.5, save=False, verbose=False, max_det = self.EXPECTED_SURFACES,
-        #                                                 classes=0, device=self.DEVICE, agnostic_nms=True, augment=True)
-        
-        # surface_coords = detect_areas(res_surface[0].summary(), pad_val = self.SURFACE_Y_PAD,
-        #                             img_shape= test_detect_img.shape[0], expected_num = self.EXPECTED_SURFACES)
-        
-        # if surface_coords is None:
-        #     return None
         if self.EXPECTED_SURFACES > 1:
             # We only flatten/correct Y motion in standard interference
             # partition_coord tells us where to split the data

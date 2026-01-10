@@ -75,7 +75,7 @@ class RegistrationMaster:
         config['PATHS']['DATA_SAVE_DIR'] = DATA_SAVE_DIR
         # Valuues
         config['VALUES']['EXPECTED_SURFACES'] = EXPECTED_SURFACES
-        config['VALUES']['EXPECTED_SURFACES'] = EXPECTED_CELLS
+        config['VALUES']['EXPECTED_CELLS'] = EXPECTED_CELLS
         # Flags
         config['FLAGS']['BATCH_FLAG'] = BATCH_FLAG
         config['FLAGS']['DISABLE_TQDM'] = DISABLE_TQDM
