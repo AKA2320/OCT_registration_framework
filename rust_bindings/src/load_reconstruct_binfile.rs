@@ -1,6 +1,6 @@
 use std::fs::{File};
 use std::io::{Read, Seek, SeekFrom};
-use bytemuck;
+use bytemuck::{cast_slice};
 use rustfft::{FftPlanner, num_complex::Complex};
 use ndarray_interp::interp1d::{Linear, Interp1DBuilder};
 use ndarray::{Array2, Axis, s, ArrayView2, ArrayView1};
@@ -59,7 +59,7 @@ pub fn load_spectrogram(
     let mut buffer: Vec<u8> = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
 
-    let raw_u16: &[u16] = bytemuck::cast_slice(&buffer);
+    let raw_u16: &[u16] = cast_slice(&buffer);
     let data: Vec<f32> = raw_u16.iter().map(|&x| x as f32).collect();
 
     let mut spectrogram = Array2::from_shape_vec((buffer_lines as usize, spectrometer_pixels as usize), data).unwrap();
