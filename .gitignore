@@ -214,3 +214,4 @@ model_transmorph_LRNPOSEMBD_Large_onlyX_batch32_ncc_normalized_shiftrange3_dynam
 profile.html
 profile.json
 old_models/
+.vscode/
