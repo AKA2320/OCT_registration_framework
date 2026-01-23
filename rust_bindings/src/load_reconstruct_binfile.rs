@@ -1,11 +1,11 @@
-use std::fs::{File, metadata};
+use std::fs::{File};
 use std::io::{Read, Seek, SeekFrom};
 use bytemuck;
 use rustfft::{FftPlanner, num_complex::Complex};
-use ndarray_interp::interp1d::{Linear, Interp1D, Interp1DBuilder};
-use ndarray::{Array2, Axis, s, Array1, ArrayView2, ArrayView1};
+use ndarray_interp::interp1d::{Linear, Interp1DBuilder};
+use ndarray::{Array2, Axis, s, ArrayView2, ArrayView1};
 
-pub fn compute_fft_magnitude(input_spectrogram_linear: &Array2<f32>, fft_size: usize) -> Array2<f32> {
+pub fn compute_fft_magnitude(input_spectrogram_linear: ArrayView2<f32>, fft_size: usize) -> Array2<f32> {
     let (rows, _) = input_spectrogram_linear.dim();
     let mut planner = FftPlanner::new();
     let fft = planner.plan_fft_forward(fft_size);
@@ -25,7 +25,7 @@ pub fn compute_fft_magnitude(input_spectrogram_linear: &Array2<f32>, fft_size: u
 }
 
 pub fn interpolate_spectrogram(
-    input_spectrogram: Array2<f32>,
+    input_spectrogram: ArrayView2<f32>,
     k_raw: ArrayView1<f32>,
     k_linear: ArrayView1<f32>, 
     ) -> Array2<f32> {
@@ -81,12 +81,12 @@ pub fn process_single_bin(
     default_shift_value: u64)
     -> (Array2<f32>, Array2<f32>) {
     let spectrogram = load_spectrogram(path, buffer_lines, spectrometer_pixels, flip_spectrum);
-    let spectrogram_linear = interpolate_spectrogram(spectrogram, k_raw, k_linear);
-    let magnitude = compute_fft_magnitude(&spectrogram_linear, fft_size);
+    let spectrogram_linear = interpolate_spectrogram(spectrogram.view(), k_raw, k_linear);
+    let magnitude = compute_fft_magnitude(spectrogram_linear.view(), fft_size);
 
     let crop_depth = magnitude.ncols() / 2;
-    let image_data = magnitude.slice(s![.., ..crop_depth]);
-    let (frame1, frame2) = reconstruct_frames(image_data.to_owned(), default_shift_value);
+    let image_data = magnitude.slice(s![.., ..crop_depth]).to_owned();
+    let (frame1, frame2) = reconstruct_frames(image_data, default_shift_value);
     (frame1, frame2)
 }
 
@@ -113,13 +113,11 @@ pub fn reconstruct_frames(
     (frame_1_raw.to_owned(), frame_2_raw.to_owned())
 }
 
-
+#[cfg(test)]
 mod tests {
-    use std::fs::{File, metadata};
-    use std::io::{Read, Seek, SeekFrom};
-    use bytemuck;
-    use ndarray::{Array2, Array1};
     use super::*;
+    use std::fs::{metadata};
+    use ndarray::{Array1};
 
     #[test]
     fn check_reconstruct(){
@@ -149,9 +147,9 @@ mod tests {
         let k_raw: Array1<f32> = Array1::range(0., 2048., 1.);
         let k_linear: Array1<f32> = Array1::range(0., 2048., 1.);
         let fft_size: usize = 4096;
-        let spectrogram_linear = interpolate_spectrogram(spectrogram, k_raw.view(), k_linear.view());
+        let spectrogram_linear = interpolate_spectrogram(spectrogram.view(), k_raw.view(), k_linear.view());
 
-        let magnitude = compute_fft_magnitude(&spectrogram_linear, fft_size);
+        let magnitude = compute_fft_magnitude(spectrogram_linear.view(), fft_size);
         println!("Shape: {:?}", magnitude.shape());
         assert_eq!(magnitude.shape(), &[buffer_lines as usize, fft_size as usize])
     }
