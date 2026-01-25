@@ -91,13 +91,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn shift_transfrom() {
-        let mut array1: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
-        array1.slice_mut(s![15..20, 500..550]).fill(1.0);
-        let array1_image = ndarray_to_kornia_image(array1);
+    fn shift_transform() {
+        let mut array1: Array2<f32> = Array::<f32, _>::zeros((250, 500));
+        array1.slice_mut(s![115..130, ..]).fill(1.0);
+        let array1_image = ndarray_to_kornia_image(array1.clone());
 
-        let mut array2: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
-        array2.slice_mut(s![32..37, 500..550]).fill(1.0);
+        let mut array2: Array2<f32> = Array::<f32, _>::zeros((250, 500));
+        array2.slice_mut(s![135..150, ..]).fill(1.0);
 
         // let (h, w1) = array1.dim();
         // let buffer1: ImageBuffer<Luma<u8>, Vec<u8>> = ImageBuffer::from_raw(
@@ -110,20 +110,20 @@ mod tests {
 
         let res_transfrom: (f32, f32) = compute_y_motion(&array1_image, array2);
         println!("{:?}", res_transfrom);
-        assert!(res_transfrom.1.round() as i32 == -17);
+        assert!(res_transfrom.1.round() as i32 == -20);
     }
 
     #[test]
-    fn no_shift_transfrom() {
-        let mut array1: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
-        array1.slice_mut(s![20..25, 500..550]).fill(1.0);
+    fn no_shift_transform() {
+        let mut array1: Array2<f32> = Array::<f32, _>::zeros((250, 500));
+        array1.slice_mut(s![120..125, ..]).fill(1.0);
         let array1_image = ndarray_to_kornia_image(array1);
 
-        let mut array2: Array2<f32> = Array::<f32, _>::zeros((50, 1000));
-        array2.slice_mut(s![20..25, 500..550]).fill(1.0);
+        let mut array2: Array2<f32> = Array::<f32, _>::zeros((250, 500));
+        array2.slice_mut(s![120..125, ..]).fill(1.0);
 
         let res_transfrom: (f32, f32) = compute_y_motion(&array1_image, array2);
-        // println!("{:?}", res_transfrom);
+        println!("{:?}", res_transfrom);
         assert!(res_transfrom.1.round() as i32 == 0);
     }
 }

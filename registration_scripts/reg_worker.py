@@ -70,6 +70,7 @@ class RegistrationWorker:
             # Load data
             self.pbar.set_description(desc = f'Loading data for {self.scan_num}')
             original_data = self._load_data()
+
             if original_data is None:
                 raise ValueError("Data loading returned None, check the input paths.")
 
@@ -143,7 +144,7 @@ class RegistrationWorker:
         return partition_coord
 
     def _process_data_pipeline(self, cropped_data):
-        """Memory optimized processing pipeline with explicit cleanup."""
+        """Memory optimized processing pipeline"""
 
         # Flatten data
         self.pbar.set_description(desc = f'Flattening {self.scan_num} surfaces.....')

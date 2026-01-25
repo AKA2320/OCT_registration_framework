@@ -1,18 +1,69 @@
 // #![allow(unused, dead_code, unused_variables, unused_imports)]
 
 use ndarray::parallel::prelude::*;
-use ndarray::{Array2, Array3, ArrayView3, Axis, s};
-use numpy::{PyReadonlyArray2, PyReadonlyArray3};
+use ndarray::{Array2, Array3, ArrayView2, ArrayView3, Axis, s, stack};
+use numpy::{PyReadonlyArray2, PyReadonlyArray3, PyArray3, PyReadonlyArray1, IntoPyArray};
 use pyo3::prelude::*;
 mod flat_minimization;
 mod utility;
 mod x_correction;
 mod y_minimization;
+mod load_reconstruct_binfile;
 
 use flat_minimization::*;
 use utility::*;
 use x_correction::*;
 use y_minimization::*;
+use load_reconstruct_binfile::*;
+
+#[pyfunction]
+fn run_y_correction_compute_rust(
+    py: Python,
+    stat_data: PyReadonlyArray2<f32>,
+    mov_data: PyReadonlyArray3<f32>,
+) -> PyResult<Vec<(f32, f32)>> {
+    let static_image = ndarray_to_kornia_image(stat_data.as_array().to_owned()); // (m * n)
+    let moving_data: Array3<f32> = mov_data.as_array().to_owned(); // (l * m * n)
+
+    let transforms: Vec<(f32, f32)> = py.detach(|| {
+        moving_data
+            .axis_iter(Axis(0))
+            .into_par_iter()
+            .map(|slice1| compute_y_motion(&static_image, slice1.to_owned()))
+            .collect()
+    });
+    Ok(transforms)
+}
+
+#[pyfunction]
+fn run_binfile_processing(
+    py: Python,
+    binfiles: Vec<String>,
+    k_raw: PyReadonlyArray1<f32>,
+    k_linear: PyReadonlyArray1<f32>,
+    flip_spectrum: bool, 
+    buffer_lines: u64, 
+    spectrometer_pixels: u64,
+    fft_size: usize,
+    default_shift_value: u64
+) -> PyResult<Py<PyArray3<f32>>> {
+    let k_raw_view = k_raw.as_array();
+    let k_linear_view = k_linear.as_array();
+
+    let frames: Vec<Array2<f32>> = py.detach(|| {
+        binfiles.into_par_iter().flat_map(|path| {
+            let (frame1, frame2) = process_single_bin(path, buffer_lines, spectrometer_pixels, flip_spectrum,
+                k_raw_view, k_linear_view, fft_size, default_shift_value);
+            vec![frame1, frame2]
+        }).collect()
+    });
+
+    let views: Vec<ArrayView2<f32>> = frames.iter().map(|f| f.view()).collect();
+    let volume_3d: Array3<f32> = stack(Axis(0), &views).expect("Frames must have identical shapes");
+    
+    let sliced_volume_3d = volume_3d.slice(s![.., 50..-50_isize, ..]).to_owned();
+    Ok(sliced_volume_3d.into_pyarray(py).unbind())
+}
 
 #[pyfunction]
 fn run_y_correction_compute_rust(
@@ -49,6 +100,7 @@ fn run_flat_correction_compute_rust(
             .map(|slice1| compute_flat_motion(&static_image, slice1.to_owned()))
             .collect()
     });
+
     Ok(transforms)
 }
 
@@ -98,6 +150,7 @@ fn rust_lib(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run_y_correction_compute_rust, m)?)?;
     m.add_function(wrap_pyfunction!(run_flat_correction_compute_rust, m)?)?;
     m.add_function(wrap_pyfunction!(run_x_correction_compute_rust, m)?)?;
+    m.add_function(wrap_pyfunction!(run_binfile_processing, m)?)?;
     Ok(())
 }
 

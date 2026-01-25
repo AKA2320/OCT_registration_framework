@@ -2,7 +2,6 @@ from collections import defaultdict
 import numpy as np
 from utils.util_funcs import min_max
 
-## Misc Functions
 def filter_list(result_list, expected_num):
     grouped = defaultdict(list)
     for item in result_list:

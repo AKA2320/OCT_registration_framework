@@ -247,7 +247,7 @@ The standalone applications provide the same GUI interface as the Python version
 ### Models
 The `models/` directory contains pre-trained models:
 - **`feature_detect_yolov12best.pt`**: YOLO-based model for anatomical feature detection in OCT images
-- **`transmorph_lateral_X_translation.pt.pt`**: Advanced TransMorph model for X-axis motion correction using Swin Transformer architecture
+- **`transmorph_lateral_X_translation.pt`**: Advanced TransMorph model for X-axis motion correction using Swin Transformer architecture
 
 ## Dependencies
 Key dependencies (see `pyproject.toml` for complete list):
