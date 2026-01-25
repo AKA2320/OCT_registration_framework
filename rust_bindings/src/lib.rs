@@ -17,25 +17,6 @@ use y_minimization::*;
 use load_reconstruct_binfile::*;
 
 #[pyfunction]
-fn run_y_correction_compute_rust(
-    py: Python,
-    stat_data: PyReadonlyArray2<f32>,
-    mov_data: PyReadonlyArray3<f32>,
-) -> PyResult<Vec<(f32, f32)>> {
-    let static_image = ndarray_to_kornia_image(stat_data.as_array().to_owned()); // (m * n)
-    let moving_data: Array3<f32> = mov_data.as_array().to_owned(); // (l * m * n)
-
-    let transforms: Vec<(f32, f32)> = py.detach(|| {
-        moving_data
-            .axis_iter(Axis(0))
-            .into_par_iter()
-            .map(|slice1| compute_y_motion(&static_image, slice1.to_owned()))
-            .collect()
-    });
-    Ok(transforms)
-}
-
-#[pyfunction]
 fn run_binfile_processing(
     py: Python,
     binfiles: Vec<String>,
