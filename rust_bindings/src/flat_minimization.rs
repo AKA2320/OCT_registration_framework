@@ -58,7 +58,7 @@ pub fn compute_flat_motion(static_image_arr1: &Image<f32, 1>, arr2: Array2<f32>)
         };
 
         // let p0 = vec![0.0_f32];
-        let solver = BrentOpt::new(-30.0_f32, 30.0_f32);
+        let solver = BrentOpt::new(-100.0_f32, 100.0_f32);
 
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(2000)) // Limit iterations per loop

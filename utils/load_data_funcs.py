@@ -4,7 +4,8 @@ from natsort import natsorted
 import os
 from utils.util_funcs import min_max, resource_path
 from utils.data_crop_funcs import preprocess_img, detect_areas
-from utils.load_reconstruct_binfiles import process_file_binfiles, reconstruct_frames, load_calibration, prepare_k_linearization
+from utils.load_reconstruct_binfiles import load_calibration, prepare_k_linearization
+from rust_lib import run_binfile_processing
 import numpy as np
 import yaml
 import glob
@@ -131,41 +132,42 @@ def load_napari_viewer(data):
 def load_bin_files(path_dir, scan_num):
     # path_dir = 'Hadiya_7_7_2025_batch1_scan2_bin/'
     path_dir = path_dir+'/' if not path_dir.endswith('/') else path_dir
-    MAIN_FOLDER = os.path.join(path_dir, 'binfiles')
-    SPECTROMETER_FILE = glob.glob(os.path.join(path_dir, '*.txt'))[0]
-    # --- PROCESSING PARAMETERS ---
-    # A_SCANS_RAW = 500   
-    BUFFER_LINES = 1030     
-    SPECTROMETER_PIXELS = 2048  # Input size
-    FFT_SIZE = 4096             # Zero-pad size to achieve >1024 depth pixels
+    main_folder = os.path.join(path_dir, 'binfiles')
+    spectrometer_file = glob.glob(os.path.join(path_dir, '*.txt'))[0]
+    # PROCESSING PARAMETERS
+    buffer_lines = 1030     
+    spectrometer_pixels = 2048  # Input size
+    fft_size = 2048           # Zero-pad size to achieve > 1024 depth pixels
 
-    calib = load_calibration(SPECTROMETER_FILE)
-    k_raw, k_lin, do_flip = prepare_k_linearization(calib, SPECTROMETER_PIXELS)
-    bin_files = natsorted(glob.glob(os.path.join(MAIN_FOLDER, "*.bin")))
+    calib = load_calibration(spectrometer_file)
+    k_raw, k_lin, do_flip = prepare_k_linearization(calib, spectrometer_pixels)
+    bin_files = natsorted(glob.glob(os.path.join(main_folder, "*.bin")))
 
-    
     '''crop_vals = []
     for i in [0,50,100,150,200]:
         raw_data = process_file_binfiles(bin_files[i], k_raw, k_lin, do_flip)
         err_vals = [err_func_crop_val(val,raw_data) for val in range(0,120)]
         print(np.min(err_vals))
         crop_vals.append(np.argmin(err_vals))
-    DEFAULT_SHIFT_VAL = int(np.mean(crop_vals))
-    print(DEFAULT_SHIFT_VAL, crop_vals)
+    default_shift_val = int(np.mean(crop_vals))
+    print(default_shift_val, crop_vals)
     '''
-    DEFAULT_SHIFT_VAL = 83
+    default_shift_val = 83
 
     if not bin_files:
         raise FileNotFoundError("No bin files found.")
     
     logging.info(f"Processing {len(bin_files)} files...")
-    volume_stack = []
-    for i, fpath in enumerate(bin_files):
-        raw_data = process_file_binfiles(fpath, k_raw, k_lin, do_flip,
-                                            BUFFER_LINES, SPECTROMETER_PIXELS, FFT_SIZE)
-        f1, f2, = reconstruct_frames(raw_data, DEFAULT_SHIFT_VAL)
-        volume_stack.append(f1)
-        volume_stack.append(f2)
-    vol_3d = np.array(volume_stack)
+    vol_3d = run_binfile_processing(bin_files, k_raw, k_lin, do_flip, buffer_lines, spectrometer_pixels, fft_size, default_shift_val)
     # print(f"Final Volume Shape: {vol_3d.shape}")
-    return vol_3d[:,50:-50,:].astype(np.float32) # remove 50 pixels from top and bottom to avoid bottom refleaction artifacts
+    return vol_3d
+    # volume_stack = []
+    # for i, fpath in enumerate(bin_files):
+    #     raw_data = process_file_binfiles(fpath, k_raw, k_lin, do_flip,
+    #                                         buffer_lines, spectrometer_pixels, fft_size)
+    #     f1, f2, = reconstruct_frames(raw_data, default_shift_val)
+    #     volume_stack.append(f1)
+    #     volume_stack.append(f2)
+    # vol_3d = np.array(volume_stack)
+    # print(f"Final Volume Shape: {vol_3d.shape}")
+    # return vol_3d[:,50:-50,:].astype(np.float32) # remove 50 pixels from top and bottom to avoid bottom refleaction artifacts
