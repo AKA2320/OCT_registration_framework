@@ -132,6 +132,16 @@ The GUI provides a user-friendly interface with three main tabs for different wo
   - Save Feature Detections: Save annotated images of the detected features
 - Cancel long-running registration processes using the Cancel button
 
+**Required Directory Structure for Binfile Processing:**
+   
+   ```
+   data_folder/
+   ├── binfiles/
+   │   └── spect1.bin
+   │   └── spect2.bin
+   └── spectrometer.txt
+   ```
+
 #### 3. Batch Process Data Tab
 - Process multiple OCT volumes in batch mode
 - Same configurable parameters as single registration
