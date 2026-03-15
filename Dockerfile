@@ -16,7 +16,7 @@ ENV PATH="/.venv/bin:$PATH"
 
 RUN pip install --upgrade pip && \
     pip install uv --no-cache-dir && \
-    uv pip install torch==2.9.0 --torch-backend cpu --no-cache-dir && \
+    uv pip install torch==2.9.0 torchvision==0.24.0 --torch-backend cpu --no-cache-dir && \
     uv pip install maturin patchelf --no-cache-dir
 
 COPY rust_bindings/ ./rust_bindings/
