@@ -6,6 +6,8 @@ from scipy import ndimage as scp
 from utils.util_funcs import warp_image_affine
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from utils.native_dlls import configure_torch_dll_path
+configure_torch_dll_path()
 from rust_lib import run_x_correction_compute_rust
 
 ## X-Motion Functions (Memory optimized and vectorized)

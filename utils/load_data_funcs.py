@@ -5,6 +5,8 @@ import os
 from utils.util_funcs import min_max, resource_path
 from utils.data_crop_funcs import preprocess_img, detect_areas
 from utils.load_reconstruct_binfiles import load_calibration, prepare_k_linearization
+from utils.native_dlls import configure_torch_dll_path
+configure_torch_dll_path()
 from rust_lib import run_binfile_processing
 import numpy as np
 import yaml

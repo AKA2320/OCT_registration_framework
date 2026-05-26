@@ -2,6 +2,8 @@ from tqdm import tqdm
 import numpy as np
 import gc
 from utils.util_funcs import warp_image_affine
+from utils.native_dlls import configure_torch_dll_path
+configure_torch_dll_path()
 from rust_lib import run_y_correction_compute_rust
 
 ## Y-Motion Functions (Memory optimized and vectorized)
