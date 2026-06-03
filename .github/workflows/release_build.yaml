@@ -9,60 +9,61 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_macos:
-    runs-on: macos-latest
-    permissions:
-      contents: write
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        python-version: '3.12'
-        enable-cache: true
-    
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Cache Rust dependencies
-      uses: Swatinem/rust-cache@v2 # RUst Cache
-      with:
-        workspaces: "rust_bindings"
-
-    - name: Create virtual environment
-      run: uv venv
-
-    - name: Install dependencies
-      run: |
-        uv pip install ".[gui]"
-        uv pip install maturin pyinstaller patchelf
-
-    - name: Run Maturin for Rust Bindings
-      run: |
-        export LIBTORCH_USE_PYTORCH=1
-        export DYLD_LIBRARY_PATH=$(uv run python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
-
-        uv run maturin build --release --auditwheel skip --out dist -m rust_bindings/Cargo.toml
-        WHEEL_FILE=$(ls dist/*.whl | head -1)
-        uv pip install "$WHEEL_FILE"
-
-    - name: Build with PyInstaller
-      run: uv run pyinstaller spec_files/OCT_mac_app.spec
-
-    - name: Zip macos executable
-      run: |
-        cd dist
-        zip -r OCT_mac_app.zip OCT_mac_app
-        ls -l
-      shell: pwsh
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: OCT_mac_app # Name of the artifact
-        path: dist/OCT_mac_app.zip # Path to the zipped executable
+  # Temporarily disabled while macOS packaging is being fixed.
+  # build_macos:
+  #   runs-on: macos-latest
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Set up uv
+  #     uses: astral-sh/setup-uv@v7
+  #     with:
+  #       python-version: '3.12'
+  #       enable-cache: true
+  #
+  #   - name: Set up Rust
+  #     uses: dtolnay/rust-toolchain@stable
+  #
+  #   - name: Cache Rust dependencies
+  #     uses: Swatinem/rust-cache@v2 # RUst Cache
+  #     with:
+  #       workspaces: "rust_bindings"
+  #
+  #   - name: Create virtual environment
+  #     run: uv venv
+  #
+  #   - name: Install dependencies
+  #     run: |
+  #       uv pip install ".[gui]"
+  #       uv pip install maturin pyinstaller patchelf
+  #
+  #   - name: Run Maturin for Rust Bindings
+  #     run: |
+  #       export LIBTORCH_USE_PYTORCH=1
+  #       export DYLD_LIBRARY_PATH=$(uv run python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '/lib')"):$DYLD_LIBRARY_PATH
+  #
+  #       uv run maturin build --release --auditwheel skip --out dist -m rust_bindings/Cargo.toml
+  #       WHEEL_FILE=$(ls dist/*.whl | head -1)
+  #       uv pip install "$WHEEL_FILE"
+  #
+  #   - name: Build with PyInstaller
+  #     run: uv run pyinstaller spec_files/OCT_mac_app.spec
+  #
+  #   - name: Zip macos executable
+  #     run: |
+  #       cd dist
+  #       zip -r OCT_mac_app.zip OCT_mac_app
+  #       ls -l
+  #     shell: pwsh
+  #
+  #   - name: Upload artifact
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: OCT_mac_app # Name of the artifact
+  #       path: dist/OCT_mac_app.zip # Path to the zipped executable
 
   build_windows:
     runs-on: windows-latest
@@ -97,7 +98,9 @@ jobs:
     - name: Run Maturin for Rust Bindings
       run: |
         $env:LIBTORCH_USE_PYTORCH = 1
-        $env:PATH = (uv run python -c "import torch; import os; print(os.path.dirname(torch.__file__) + '\\Lib\\site-packages\\torch\\lib')") + ';' + $env:PATH
+        $torchLib = uv run python -c "import torch; import os; print(os.path.join(os.path.dirname(torch.__file__), 'lib'))"
+        $env:PATH = "$torchLib;$env:PATH"
+        $torchLib | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
         uv run maturin build --release --out dist -m rust_bindings/Cargo.toml
         $wheel_file = Get-ChildItem dist/*.whl | Select-Object -First 1 -ExpandProperty FullName
@@ -154,7 +157,7 @@ jobs:
 
   create_release:
     runs-on: ubuntu-latest
-    needs: [build_windows, build_macos, build_docker] 
+    needs: [build_windows, build_docker]
     permissions:
       contents: write 
     steps:
@@ -167,11 +170,12 @@ jobs:
         name: OCT_windows_app 
         path: ./release_assets/windows # Download to a specific subfolder
 
-    - name: Download macOS artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: OCT_mac_app
-        path: ./release_assets/macos # Download to a specific subfolder
+    # Temporarily disabled with the macOS build.
+    # - name: Download macOS artifact
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: OCT_mac_app
+    #     path: ./release_assets/macos # Download to a specific subfolder
 
     - name: List downloaded files (for debugging)
       run: ls -R ./release_assets
@@ -179,9 +183,9 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        # macOS asset temporarily disabled with the macOS build.
         files: |
           ./release_assets/windows/OCT_windows_app.zip
-          ./release_assets/macos/OCT_mac_app.zip
         name: Release ${{ github.ref_name }} # Unified release name
         tag_name: release-${{ github.ref_name }}
         draft: false
